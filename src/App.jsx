@@ -83,6 +83,7 @@ export default function App() {
       status: 'production',
       statusLabel: 'Listo para Producción',
       badgeColor: 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
+      iconImg: '/projects/kpm.png',
       icon: Package,
       iconColor: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30',
       description: 'Suite integral para crear instaladores y paquetes portables de Windows. Combina compresión Brotli Ultra (ahorro >99% en imágenes .ISO) con Deflate 9, Bóveda criptográfica militar AES-256-GCM, modo sigilo anónimo y extracción por streaming sin archivos temporales.',
@@ -100,6 +101,7 @@ export default function App() {
       status: 'dev',
       statusLabel: 'En Desarrollo Activo',
       badgeColor: 'border-amber-500/40 text-amber-400 bg-amber-950/30',
+      iconImg: '/projects/playwarp.svg',
       icon: Gamepad2,
       iconColor: 'text-amber-400 bg-amber-950/40 border-amber-500/30',
       description: 'Launcher de videojuegos universal y agregador de tiendas legales. Diseñado para explorar, comprar y descargar títulos de distribuidores autorizados en una sola interfaz ligera con catálogo multi-página, optimizado para PC y Steam Deck (100% legal y sin bloatware).',
@@ -116,6 +118,7 @@ export default function App() {
       status: 'production',
       statusLabel: 'Producción Estable',
       badgeColor: 'border-purple-500/40 text-purple-400 bg-purple-950/30',
+      iconImg: '/projects/kyrnex.png',
       icon: Server,
       iconColor: 'text-purple-400 bg-purple-950/40 border-purple-500/30',
       description: 'Plataforma integral de ejecución y gestión de aplicaciones web locales (Local Web Applications Runtime & Manager Platform). Permite levantar servidores locales instantáneos, orquestar microservicios con DynExpress y probar APIs directamente en Windows sin configuraciones engorrosas.',
@@ -132,6 +135,7 @@ export default function App() {
       status: 'dev',
       statusLabel: 'Arquitectura & Core',
       badgeColor: 'border-cyan-500/40 text-cyan-400 bg-cyan-950/30',
+      iconImg: '/projects/2dgo.png',
       icon: Code2,
       iconColor: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30',
       description: 'Framework modular de alto rendimiento para renderizado 2D, físicas de plataformas ágiles y videojuegos retro-modernos. Diseñado para ofrecer máxima tasa de cuadros por segundo con un consumo ultra bajo de CPU y memoria en cualquier computadora.',
@@ -148,6 +152,7 @@ export default function App() {
       status: 'planned',
       statusLabel: 'Utilidad Nativa',
       badgeColor: 'border-blue-500/40 text-blue-400 bg-blue-950/30',
+      iconImg: null, // Sin icono asignado todavía -> usa el icono por defecto
       icon: Download,
       iconColor: 'text-blue-400 bg-blue-950/40 border-blue-500/30',
       description: 'Herramienta nativa de distribución rápida y verificación criptográfica de integridad para paquetes y assets de videojuegos. Opera sin servicios invasivos en segundo plano ni telemetría oculta.',
@@ -293,9 +298,16 @@ export default function App() {
             
             <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between">
               <div className="space-y-4 max-w-2xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-950/50 border border-cyan-500/40 flex items-center justify-center p-2.5">
-                    <Package className="w-full h-full text-cyan-400" />
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-14 h-14 rounded-2xl bg-[#0c0e17] border border-cyan-500/40 flex items-center justify-center p-2.5 shadow-lg shadow-cyan-500/10 flex-shrink-0">
+                    <img 
+                      src="/projects/kpm.png" 
+                      alt="KPM Studio Icon" 
+                      className="w-full h-full object-contain rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.src = "/projects/default-app.svg";
+                      }}
+                    />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-zinc-100">KPM Studio Suite</h3>
@@ -404,12 +416,36 @@ export default function App() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center p-2 ${p.iconColor}`}>
-                          <IconComponent className="w-full h-full" />
+                      <div className="flex items-center space-x-3.5">
+                        <div className="w-12 h-12 rounded-xl bg-[#0c0e17] border border-zinc-800 flex items-center justify-center p-2 flex-shrink-0 shadow-sm relative group-hover:border-zinc-700 transition">
+                          {p.iconImg ? (
+                            <img 
+                              src={p.iconImg} 
+                              alt={p.title} 
+                              className="w-full h-full object-contain rounded-md"
+                              onError={(e) => {
+                                e.currentTarget.src = "/projects/default-app.svg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center relative" title="Icono por defecto (en diseño)">
+                              <img 
+                                src="/projects/default-app.svg" 
+                                alt="Default App Icon" 
+                                className="w-full h-full object-contain opacity-75" 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div>
-                          <h4 className="text-base font-bold text-zinc-100">{p.title}</h4>
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-base font-bold text-zinc-100">{p.title}</h4>
+                            {!p.iconImg && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/50" title="Este proyecto usa el icono por defecto">
+                                Icono base
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[11px] font-mono text-zinc-500">{p.categoryLabel}</span>
                         </div>
                       </div>

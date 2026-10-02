@@ -152,10 +152,31 @@ export default function ModDashboard({ onNavigateHome }) {
   useEffect(() => {
     const fetchRemoteData = async () => {
       try {
+        const timestamp = Date.now();
+        // 1. Try fetching via API (Cloudflare KV or serverless edge)
+        const apiRes = await fetch(`/api/v1/content?t=${timestamp}`, { cache: 'no-store' })
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null);
+
+        if (apiRes && apiRes.availableApps && Array.isArray(apiRes.availableApps) && apiRes.availableApps.length > 0) {
+          setApps(apiRes.availableApps);
+          localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apiRes.availableApps));
+          if (Array.isArray(apiRes.projects) && apiRes.projects.length > 0) {
+            setProjects(apiRes.projects);
+            localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(apiRes.projects));
+          }
+          if (apiRes.siteSettings && apiRes.siteSettings.hero) {
+            setSiteSettings(apiRes.siteSettings);
+            localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(apiRes.siteSettings));
+          }
+          return;
+        }
+
+        // 2. Direct static JSON fallback with cache-busting
         const [resApps, resProjects, resSettings] = await Promise.all([
-          fetch('/data/apps.json').then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch('/data/projects.json').then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch('/data/settings.json').then(r => r.ok ? r.json() : null).catch(() => null)
+          fetch(`/data/apps.json?t=${timestamp}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`/data/projects.json?t=${timestamp}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`/data/settings.json?t=${timestamp}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
 
         if (resApps && Array.isArray(resApps) && resApps.length > 0) {

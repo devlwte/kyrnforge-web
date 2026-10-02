@@ -110,6 +110,35 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Fetch latest JSON data from server on startup so updates are received by all visitors
+  useEffect(() => {
+    const fetchRemoteData = async () => {
+      try {
+        const [resApps, resProjects, resSettings] = await Promise.all([
+          fetch('/data/apps.json').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/data/projects.json').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/data/settings.json').then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
+
+        if (resApps && Array.isArray(resApps) && resApps.length > 0) {
+          setAvailableApps(resApps);
+          localStorage.setItem('kyrnforge_available_apps', JSON.stringify(resApps));
+        }
+        if (resProjects && Array.isArray(resProjects) && resProjects.length > 0) {
+          setProjects(resProjects);
+          localStorage.setItem('kyrnforge_projects', JSON.stringify(resProjects));
+        }
+        if (resSettings && resSettings.hero) {
+          setSiteSettings(resSettings);
+          localStorage.setItem('kyrnforge_site_settings', JSON.stringify(resSettings));
+        }
+      } catch (e) {
+        console.warn('Operando con datos cacheados/empaquetados:', e);
+      }
+    };
+    fetchRemoteData();
+  }, []);
+
   const navigateTo = (path) => {
     window.history.pushState({}, '', path);
     setCurrentPath(path);

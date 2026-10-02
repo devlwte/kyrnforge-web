@@ -1,11 +1,11 @@
 // Cloudflare Pages Function: /api/v1/apps
-// Supports GET (retrieve apps) and POST (save/update apps)
+// Supports GET (retrieve apps JSON) and POST (save/update apps)
 
 export async function onRequestGet(context) {
   try {
-    const { env } = context;
-    // Check if Cloudflare KV is configured
-    if (env.KYRNFORGE_KV) {
+    const { env, request } = context;
+    // 1. Check if Cloudflare KV is configured
+    if (env && env.KYRNFORGE_KV) {
       const stored = await env.KYRNFORGE_KV.get("available_apps", { type: "json" });
       if (stored) {
         return new Response(JSON.stringify(stored), {
@@ -18,9 +18,24 @@ export async function onRequestGet(context) {
       }
     }
 
+    // 2. Fallback to the real public/data/apps.json file
+    if (env && env.ASSETS) {
+      const jsonUrl = new URL('/data/apps.json', request.url);
+      const staticRes = await env.ASSETS.fetch(jsonUrl);
+      if (staticRes && staticRes.ok) {
+        return new Response(staticRes.body, {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=60"
+          }
+        });
+      }
+    }
+
     return new Response(JSON.stringify({
-      message: "No custom apps in KV yet, serving defaults.",
-      source: "edge-default"
+      message: "Apps JSON endpoint activo.",
+      source: "edge-static"
     }), {
       headers: {
         "Content-Type": "application/json",
@@ -68,14 +83,25 @@ export async function onRequestPost(context) {
       });
     }
 
-    // If Cloudflare KV is bound
-    if (env.KYRNFORGE_KV) {
+    // If Cloudflare KV is bound, persist to KV
+    if (env && env.KYRNFORGE_KV) {
       await env.KYRNFORGE_KV.put("available_apps", JSON.stringify(apps));
+      return new Response(JSON.stringify({
+        success: true,
+        source: "cloudflare-kv",
+        message: "Aplicaciones guardadas permanentemente en Cloudflare KV en la nube.",
+        count: apps.length,
+        timestamp: new Date().toISOString()
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: "Aplicaciones del carrusel guardadas correctamente en la API del servidor.",
+      source: "client-persisted",
+      message: "Datos recibidos correctamente. Para persistencia permanente en la nube sin compilar, asocia una base de datos KV en Cloudflare Pages, o usa el guardado local con deploy.bat.",
       count: apps.length,
       timestamp: new Date().toISOString()
     }), {

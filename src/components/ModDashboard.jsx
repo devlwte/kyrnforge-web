@@ -148,6 +148,35 @@ export default function ModDashboard({ onNavigateHome }) {
     return initialSiteSettings;
   });
 
+  // Fetch latest JSON data from server on dashboard mount
+  useEffect(() => {
+    const fetchRemoteData = async () => {
+      try {
+        const [resApps, resProjects, resSettings] = await Promise.all([
+          fetch('/data/apps.json').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/data/projects.json').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/data/settings.json').then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
+
+        if (resApps && Array.isArray(resApps) && resApps.length > 0) {
+          setApps(resApps);
+          localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(resApps));
+        }
+        if (resProjects && Array.isArray(resProjects) && resProjects.length > 0) {
+          setProjects(resProjects);
+          localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(resProjects));
+        }
+        if (resSettings && resSettings.hero) {
+          setSiteSettings(resSettings);
+          localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(resSettings));
+        }
+      } catch (e) {
+        console.warn('Operando con datos de respaldo local:', e);
+      }
+    };
+    fetchRemoteData();
+  }, []);
+
   // Modals & UI helpers
   const [editingApp, setEditingApp] = useState(null);
   const [isAppModalOpen, setIsAppModalOpen] = useState(false);
@@ -169,7 +198,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(newApps, null, 2));
 
     try {
-      const auth = passwordInput || localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS;
+      const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
       const res = await fetch('/api/v1/apps', {
         method: 'POST',
         headers: {
@@ -180,13 +209,17 @@ export default function ModDashboard({ onNavigateHome }) {
       });
       const data = await res.json();
       if (data && data.success) {
-        showToast('✓ Apps sincronizadas y guardadas en el servidor (src/data/defaultApps.js)');
+        if (data.source === 'cloudflare-kv') {
+          showToast('✓ Apps guardadas permanentemente en Cloudflare KV (Nube)');
+        } else {
+          showToast('✓ Apps guardadas en public/data/apps.json. Ejecuta deploy.bat para publicar online.');
+        }
         return;
       }
     } catch (err) {
       console.warn("API de servidor no disponible o modo estático:", err);
     }
-    showToast('Carrusel de apps actualizado correctamente');
+    showToast('✓ Apps actualizadas en este navegador');
   };
 
   // Persist Projects to both Backend API and localStorage
@@ -195,7 +228,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(newProjects, null, 2));
 
     try {
-      const auth = passwordInput || localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS;
+      const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -206,13 +239,17 @@ export default function ModDashboard({ onNavigateHome }) {
       });
       const data = await res.json();
       if (data && data.success) {
-        showToast('✓ Proyectos guardados en el servidor (src/data/defaultSiteData.js)');
+        if (data.source === 'cloudflare-kv') {
+          showToast('✓ Proyectos guardados permanentemente en Cloudflare KV (Nube)');
+        } else {
+          showToast('✓ Proyectos guardados en public/data/projects.json. Ejecuta deploy.bat para publicar.');
+        }
         return;
       }
     } catch (err) {
       console.warn("API de servidor no disponible o modo estático:", err);
     }
-    showToast('Catálogo de proyectos actualizado correctamente');
+    showToast('✓ Proyectos actualizados en este navegador');
   };
 
   // Persist Site Settings to both Backend API and localStorage
@@ -221,7 +258,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(newSettings, null, 2));
 
     try {
-      const auth = passwordInput || localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS;
+      const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -232,13 +269,17 @@ export default function ModDashboard({ onNavigateHome }) {
       });
       const data = await res.json();
       if (data && data.success) {
-        showToast('✓ Configuración guardada en el servidor (src/data/defaultSiteData.js)');
+        if (data.source === 'cloudflare-kv') {
+          showToast('✓ Configuración guardada en Cloudflare KV (Nube)');
+        } else {
+          showToast('✓ Configuración guardada en public/data/settings.json. Ejecuta deploy.bat para publicar.');
+        }
         return;
       }
     } catch (err) {
       console.warn("API de servidor no disponible o modo estático:", err);
     }
-    showToast('Configuraciones de portada y métricas guardadas');
+    showToast('✓ Configuración actualizada en este navegador');
   };
 
   const showToast = (msg) => {

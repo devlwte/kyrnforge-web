@@ -33,8 +33,12 @@ function kyrnforgeApiPlugin() {
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Access-Control-Allow-Origin', '*');
 
-        const defaultAppsPath = path.resolve(__dirname, 'src/data/defaultApps.js');
-        const defaultSiteDataPath = path.resolve(__dirname, 'src/data/defaultSiteData.js');
+        const appsPublicPath = path.resolve(__dirname, 'public/data/apps.json');
+        const appsSrcPath = path.resolve(__dirname, 'src/data/apps.json');
+        const projectsPublicPath = path.resolve(__dirname, 'public/data/projects.json');
+        const projectsSrcPath = path.resolve(__dirname, 'src/data/projects.json');
+        const settingsPublicPath = path.resolve(__dirname, 'public/data/settings.json');
+        const settingsSrcPath = path.resolve(__dirname, 'src/data/settings.json');
 
         const readBody = () => new Promise((resolve) => {
           let data = '';
@@ -54,19 +58,18 @@ function kyrnforgeApiPlugin() {
           return token === 'kyrnforge2026' || token === 'admin';
         };
 
-        // --- 1. /api/v1/apps (Manage carousel apps) ---
+        // --- 1. /api/v1/apps (Manage carousel apps in JSON) ---
         if (url === '/api/v1/apps' || url.startsWith('/api/v1/apps?')) {
           if (req.method === 'GET') {
             try {
-              const fileContent = fs.readFileSync(defaultAppsPath, 'utf8');
-              const jsonMatch = fileContent.match(/export const initialAvailableApps = (\[[\s\S]*?\]);/);
-              if (jsonMatch) {
-                return res.end(jsonMatch[1]);
+              if (fs.existsSync(appsPublicPath)) {
+                const data = fs.readFileSync(appsPublicPath, 'utf8');
+                return res.end(data);
               }
             } catch (e) {
               // fallback
             }
-            return res.end(JSON.stringify({ status: 'ok', source: 'local-file' }));
+            return res.end(JSON.stringify({ status: 'ok', source: 'local-json' }));
           }
 
           if (req.method === 'POST') {
@@ -79,24 +82,38 @@ function kyrnforgeApiPlugin() {
             const apps = Array.isArray(body) ? body : body?.apps;
             if (!Array.isArray(apps)) {
               res.statusCode = 400;
-              return res.end(JSON.stringify({ success: false, error: 'Se esperaba un array de apps.' }));
+              return res.end(JSON.stringify({ success: false, error: 'Se esperaba un array de apps en formato JSON.' }));
             }
 
-            // Write to src/data/defaultApps.js on disk!
-            const newContent = `// Default applications for the KyrnForge Downloads Carousel\nexport const initialAvailableApps = ${JSON.stringify(apps, null, 2)};\n`;
-            fs.writeFileSync(defaultAppsPath, newContent, 'utf8');
+            // Write to both public/data/apps.json and src/data/apps.json on disk!
+            const jsonStr = JSON.stringify(apps, null, 2);
+            fs.writeFileSync(appsPublicPath, jsonStr, 'utf8');
+            fs.writeFileSync(appsSrcPath, jsonStr, 'utf8');
 
             return res.end(JSON.stringify({
               success: true,
-              message: 'Aplicaciones guardadas y aplicadas a los archivos del servidor local.',
+              message: 'Aplicaciones guardadas directamente en apps.json del proyecto.',
+              file: 'public/data/apps.json',
               count: apps.length,
               timestamp: new Date().toISOString()
             }));
           }
         }
 
-        // --- 2. /api/v1/content (Full site content: apps, projects, settings) ---
+        // --- 2. /api/v1/content (Full site content: apps.json, projects.json, settings.json) ---
         if (url === '/api/v1/content' || url.startsWith('/api/v1/content?')) {
+          if (req.method === 'GET') {
+            try {
+              const apps = fs.existsSync(appsPublicPath) ? JSON.parse(fs.readFileSync(appsPublicPath, 'utf8')) : [];
+              const projects = fs.existsSync(projectsPublicPath) ? JSON.parse(fs.readFileSync(projectsPublicPath, 'utf8')) : [];
+              const siteSettings = fs.existsSync(settingsPublicPath) ? JSON.parse(fs.readFileSync(settingsPublicPath, 'utf8')) : {};
+              return res.end(JSON.stringify({ availableApps: apps, projects, siteSettings }, null, 2));
+            } catch (err) {
+              res.statusCode = 500;
+              return res.end(JSON.stringify({ error: err.message }));
+            }
+          }
+
           if (req.method === 'POST') {
             if (!checkAuth()) {
               res.statusCode = 401;
@@ -111,34 +128,28 @@ function kyrnforgeApiPlugin() {
 
             // Save apps if provided
             if (Array.isArray(body.availableApps)) {
-              const newAppsContent = `// Default applications for the KyrnForge Downloads Carousel\nexport const initialAvailableApps = ${JSON.stringify(body.availableApps, null, 2)};\n`;
-              fs.writeFileSync(defaultAppsPath, newAppsContent, 'utf8');
+              const jsonStr = JSON.stringify(body.availableApps, null, 2);
+              fs.writeFileSync(appsPublicPath, jsonStr, 'utf8');
+              fs.writeFileSync(appsSrcPath, jsonStr, 'utf8');
             }
 
-            // Save projects and siteSettings if provided
-            if (Array.isArray(body.projects) || body.siteSettings) {
-              let existingProjects = [];
-              let existingSettings = {};
-              try {
-                const siteDataContent = fs.readFileSync(defaultSiteDataPath, 'utf8');
-                const pMatch = siteDataContent.match(/export const initialProjects = (\[[\s\S]*?\]);/);
-                if (pMatch) existingProjects = JSON.parse(pMatch[1]);
-                const sMatch = siteDataContent.match(/export const initialSiteSettings = (\{[\s\S]*?\});/);
-                if (sMatch) existingSettings = JSON.parse(sMatch[1]);
-              } catch (e) {
-                // ignore
-              }
+            // Save projects if provided
+            if (Array.isArray(body.projects)) {
+              const jsonStr = JSON.stringify(body.projects, null, 2);
+              fs.writeFileSync(projectsPublicPath, jsonStr, 'utf8');
+              fs.writeFileSync(projectsSrcPath, jsonStr, 'utf8');
+            }
 
-              const finalProjects = body.projects || existingProjects;
-              const finalSettings = body.siteSettings || existingSettings;
-
-              const newSiteDataContent = `import { initialAvailableApps } from './defaultApps';\n\nexport { initialAvailableApps };\n\n// Initial projects for the KyrnForge Ecosystem catalog\nexport const initialProjects = ${JSON.stringify(finalProjects, null, 2)};\n\n// Initial Site Settings (Hero, Metrics, Footer)\nexport const initialSiteSettings = ${JSON.stringify(finalSettings, null, 2)};\n`;
-              fs.writeFileSync(defaultSiteDataPath, newSiteDataContent, 'utf8');
+            // Save siteSettings if provided
+            if (body.siteSettings && typeof body.siteSettings === 'object') {
+              const jsonStr = JSON.stringify(body.siteSettings, null, 2);
+              fs.writeFileSync(settingsPublicPath, jsonStr, 'utf8');
+              fs.writeFileSync(settingsSrcPath, jsonStr, 'utf8');
             }
 
             return res.end(JSON.stringify({
               success: true,
-              message: 'Contenido completo guardado en los archivos reales del servidor (src/data/).',
+              message: 'Contenido completo guardado en los archivos reales JSON del servidor (public/data/).',
               timestamp: new Date().toISOString()
             }));
           }

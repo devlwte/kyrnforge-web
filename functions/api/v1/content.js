@@ -3,8 +3,10 @@
 
 export async function onRequestGet(context) {
   try {
-    const { env } = context;
-    if (env.KYRNFORGE_KV) {
+    const { env, request } = context;
+
+    // 1. If Cloudflare KV is configured
+    if (env && env.KYRNFORGE_KV) {
       const apps = await env.KYRNFORGE_KV.get("available_apps", { type: "json" });
       const projects = await env.KYRNFORGE_KV.get("projects", { type: "json" });
       const siteSettings = await env.KYRNFORGE_KV.get("site_settings", { type: "json" });
@@ -23,6 +25,28 @@ export async function onRequestGet(context) {
           }
         });
       }
+    }
+
+    // 2. Fallback to static JSON files
+    if (env && env.ASSETS) {
+      const [resApps, resProjects, resSettings] = await Promise.all([
+        env.ASSETS.fetch(new URL('/data/apps.json', request.url)).then(r => r.ok ? r.json() : null).catch(() => null),
+        env.ASSETS.fetch(new URL('/data/projects.json', request.url)).then(r => r.ok ? r.json() : null).catch(() => null),
+        env.ASSETS.fetch(new URL('/data/settings.json', request.url)).then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
+
+      return new Response(JSON.stringify({
+        source: "edge-static-json",
+        availableApps: resApps,
+        projects: resProjects,
+        siteSettings: resSettings
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=60"
+        }
+      });
     }
 
     return new Response(JSON.stringify({
@@ -63,23 +87,35 @@ export async function onRequestPost(context) {
       });
     }
 
-    if (env.KYRNFORGE_KV) {
-      if (payload.availableApps) {
+    if (env && env.KYRNFORGE_KV) {
+      if (Array.isArray(payload.availableApps)) {
         await env.KYRNFORGE_KV.put("available_apps", JSON.stringify(payload.availableApps));
       }
-      if (payload.projects) {
+      if (Array.isArray(payload.projects)) {
         await env.KYRNFORGE_KV.put("projects", JSON.stringify(payload.projects));
       }
       if (payload.siteSettings) {
         await env.KYRNFORGE_KV.put("site_settings", JSON.stringify(payload.siteSettings));
       }
+
+      return new Response(JSON.stringify({
+        success: true,
+        source: "cloudflare-kv",
+        message: "Todos los datos del sitio guardados en Cloudflare KV en la nube.",
+        timestamp: new Date().toISOString()
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: "Contenido completo sincronizado con el servidor de Cloudflare.",
+      source: "client-persisted",
+      message: "Contenido recibido. Para persistencia permanente en la nube sin compilar, asocia una base de datos KV en Cloudflare Pages, o usa el guardado local con deploy.bat.",
       timestamp: new Date().toISOString()
     }), {
+      status: 200,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   } catch (err) {

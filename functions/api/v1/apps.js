@@ -4,15 +4,17 @@
 export async function onRequestGet(context) {
   try {
     const { env, request } = context;
-    // 1. Check if Cloudflare KV is configured
-    if (env && env.KYRNFORGE_KV) {
-      const stored = await env.KYRNFORGE_KV.get("available_apps", { type: "json" });
+    const kv = env?.KYRNFORGE_KV || env?.KV || env?.DB || env?.kyrnforge_kv;
+
+    // 1. Check if Cloudflare KV database is configured
+    if (kv) {
+      const stored = await kv.get("available_apps", { type: "json" });
       if (stored) {
         return new Response(JSON.stringify(stored), {
           headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=60"
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
           }
         });
       }
@@ -27,7 +29,7 @@ export async function onRequestGet(context) {
           headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=60"
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
           }
         });
       }
@@ -83,9 +85,11 @@ export async function onRequestPost(context) {
       });
     }
 
+    const kv = env?.KYRNFORGE_KV || env?.KV || env?.DB || env?.kyrnforge_kv;
+
     // If Cloudflare KV is bound, persist to KV
-    if (env && env.KYRNFORGE_KV) {
-      await env.KYRNFORGE_KV.put("available_apps", JSON.stringify(apps));
+    if (kv) {
+      await kv.put("available_apps", JSON.stringify(apps));
       return new Response(JSON.stringify({
         success: true,
         source: "cloudflare-kv",

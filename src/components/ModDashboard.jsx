@@ -191,18 +191,41 @@ export default function ModDashboard({ onNavigateHome }) {
           .then(r => r.ok ? r.json() : null)
           .catch(() => null);
 
-        if (apiRes && apiRes.availableApps && Array.isArray(apiRes.availableApps) && apiRes.availableApps.length > 0) {
-          setApps(apiRes.availableApps);
-          localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apiRes.availableApps));
-          if (Array.isArray(apiRes.projects) && apiRes.projects.length > 0) {
-            setProjects(apiRes.projects);
-            localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(apiRes.projects));
+        if (apiRes) {
+          if (apiRes.database) {
+            setDbStatus(apiRes.database);
           }
-          if (apiRes.siteSettings && apiRes.siteSettings.hero) {
-            setSiteSettings(apiRes.siteSettings);
-            localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(apiRes.siteSettings));
+          if (apiRes.availableApps && Array.isArray(apiRes.availableApps) && apiRes.availableApps.length > 0) {
+            setApps(apiRes.availableApps);
+            localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(apiRes.availableApps));
+            if (Array.isArray(apiRes.projects) && apiRes.projects.length > 0) {
+              setProjects(apiRes.projects);
+              localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(apiRes.projects));
+            }
+            if (apiRes.siteSettings && apiRes.siteSettings.hero) {
+              setSiteSettings(apiRes.siteSettings);
+              localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(apiRes.siteSettings));
+            }
+            return;
           }
-          return;
+        }
+
+        // 1.5 Check External Database URL fallback
+        const savedCustomUrl = localStorage.getItem('kyrnforge_custom_db_url');
+        if (savedCustomUrl) {
+          try {
+            const cleanUrl = savedCustomUrl.replace(/\/$/, '');
+            const target = cleanUrl.endsWith('.json') ? cleanUrl : `${cleanUrl}/apps.json`;
+            const customApps = await fetch(`${target}?t=${timestamp}`).then(r => r.ok ? r.json() : null).catch(() => null);
+            if (customApps && Array.isArray(customApps) && customApps.length > 0) {
+              setApps(customApps);
+              localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(customApps));
+              setDbStatus({ connected: true, type: 'Base de Datos Externa' });
+              return;
+            }
+          } catch {
+            // fallback
+          }
         }
 
         // 2. Direct static JSON fallback with cache-busting
@@ -250,103 +273,62 @@ export default function ModDashboard({ onNavigateHome }) {
   const [importError, setImportError] = useState('');
   const [copiedExport, setCopiedExport] = useState(false);
   const [saveSuccessToast, setSaveSuccessToast] = useState('');
-  const [ghToken, setGhToken] = useState(() => {
+  const [dbStatus, setDbStatus] = useState({ connected: false, type: 'none', loading: true });
+  const [showDbGuide, setShowDbGuide] = useState(false);
+  const [customDbUrl, setCustomDbUrl] = useState(() => {
     try {
-      return localStorage.getItem('kyrnforge_gh_token') || '';
+      return localStorage.getItem('kyrnforge_custom_db_url') || '';
     } catch {
       return '';
     }
   });
-  const [isSyncingGh, setIsSyncingGh] = useState(false);
+  const [isSavingDb, setIsSavingDb] = useState(false);
 
-  const syncAppsToGitHub = async () => {
-    let token = ghToken;
-    if (!token) {
-      const promptVal = prompt('Para sincronizar directamente a la nube desde este navegador (móvil o PC), introduce un GitHub Personal Access Token con permiso "repo":');
-      if (!promptVal) return;
-      token = promptVal.trim();
-      setGhToken(token);
-      localStorage.setItem('kyrnforge_gh_token', token);
-    }
-
-    setIsSyncingGh(true);
+  // Check Database connection (Cloudflare KV or External DB)
+  const refreshDbStatus = async () => {
     try {
-      // 1. Get current SHA of public/data/apps.json
-      const getFileRes = await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/public/data/apps.json', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
+      const res = await fetch(`/api/v1/content?t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.database && data.database.connected) {
+          setDbStatus(data.database);
+          showToast(`✓ Base de Datos Conectada: ${data.database.type}`);
+          return;
         }
-      });
-      if (!getFileRes.ok) {
-        throw new Error('No se pudo acceder al repositorio de GitHub con ese token. Verifica los permisos.');
       }
-      const fileData = await getFileRes.json();
-      const currentSha = fileData.sha;
-
-      // 2. Commit updated apps.json
-      const jsonString = JSON.stringify(apps, null, 2);
-      const contentBase64 = btoa(unescape(encodeURIComponent(jsonString)));
-
-      const updateRes = await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/public/data/apps.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify({
-          message: 'feat: actualizar apps.json desde panel /mod',
-          content: contentBase64,
-          sha: currentSha
-        })
-      });
-
-      if (updateRes.ok) {
-        // Also attempt to sync src/data/apps.json so repo stays completely unified
-        try {
-          const getSrcRes = await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/src/data/apps.json', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          });
-          if (getSrcRes.ok) {
-            const srcData = await getSrcRes.json();
-            await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/src/data/apps.json', {
-              method: 'PUT',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
-              },
-              body: JSON.stringify({
-                message: 'feat: sincronizar src/data/apps.json desde panel /mod',
-                content: contentBase64,
-                sha: srcData.sha
-              })
-            });
-          }
-        } catch {
-          // public/data/apps.json is the primary static asset served
-        }
-
-        showToast('✓ ¡Sincronizado con GitHub! Cloudflare Pages desplegará los cambios en ~25 segundos para todos.');
-      } else {
-        const errData = await updateRes.json().catch(() => ({}));
-        alert('Error al sincronizar con GitHub: ' + (errData.message || 'Error desconocido'));
-      }
-    } catch (err) {
-      alert('Error de sincronización con GitHub: ' + err.message);
-    } finally {
-      setIsSyncingGh(false);
+    } catch {
+      // ignore
+    }
+    if (customDbUrl) {
+      setDbStatus({ connected: true, type: 'Base de Datos Externa' });
+      showToast('✓ Conectado a Base de Datos Externa');
+    } else {
+      setDbStatus({ connected: false, type: 'none' });
+      showToast('ℹ Base de Datos Cloudflare KV no vinculada aún');
     }
   };
 
-  // Persist Apps to both Backend API and localStorage
+  // Persist Apps to Database (Cloudflare KV or External DB) and local storage
   const saveApps = async (newApps) => {
     setApps(newApps);
     localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(newApps, null, 2));
+    setIsSavingDb(true);
+
+    let savedToExternal = false;
+    if (customDbUrl) {
+      try {
+        const cleanUrl = customDbUrl.replace(/\/$/, '');
+        const target = cleanUrl.endsWith('.json') ? cleanUrl : `${cleanUrl}/apps.json`;
+        await fetch(target, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newApps)
+        });
+        savedToExternal = true;
+      } catch (err) {
+        console.warn("Error guardando en base de datos externa:", err);
+      }
+    }
 
     try {
       const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
@@ -361,16 +343,23 @@ export default function ModDashboard({ onNavigateHome }) {
       const data = await res.json();
       if (data && data.success) {
         if (data.source === 'cloudflare-kv') {
-          showToast('✓ Apps guardadas permanentemente en Cloudflare KV (Nube)');
-        } else {
-          showToast('✓ Apps guardadas en public/data/apps.json. Ejecuta deploy.bat para publicar online.');
+          setDbStatus({ connected: true, type: 'Cloudflare KV' });
+          showToast('✓ ¡Guardado en la Base de Datos en la Nube (Cloudflare KV)! Visible en todos los dispositivos.');
+          setIsSavingDb(false);
+          return;
         }
-        return;
       }
     } catch (err) {
       console.warn("API de servidor no disponible o modo estático:", err);
+    } finally {
+      setIsSavingDb(false);
     }
-    showToast('✓ Apps actualizadas en este navegador');
+
+    if (savedToExternal) {
+      showToast('✓ ¡Guardado en la Base de Datos en la Nube! Sincronizado en todos los dispositivos.');
+    } else {
+      showToast('✓ Apps guardadas localmente. (Vincula Cloudflare KV para que se sincronice en todos los dispositivos).');
+    }
   };
 
   // Persist Projects to both Backend API and localStorage
@@ -1011,8 +1000,133 @@ export default function ModDashboard({ onNavigateHome }) {
         </div>
       </header>
 
+      {/* Cloud Database Status Card */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4">
+        <div className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 transition shadow-sm ${
+          dbStatus.connected 
+            ? 'bg-emerald-950/25 border-emerald-500/40 text-emerald-300' 
+            : 'bg-[#0c0e17] border-amber-500/40 text-zinc-300'
+        }`}>
+          <div className="flex items-start sm:items-center space-x-3">
+            <div className={`w-3 h-3 rounded-full mt-1 sm:mt-0 flex-shrink-0 animate-pulse ${
+              dbStatus.connected ? 'bg-emerald-400 shadow-lg shadow-emerald-400/50' : 'bg-amber-400 shadow-lg shadow-amber-400/50'
+            }`} />
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-100">
+                  {dbStatus.connected ? `Base de Datos en la Nube: ${dbStatus.type}` : 'Base de Datos: Modo Local (Sin Vincular a la Nube)'}
+                </span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                  dbStatus.connected 
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-bold' 
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  {dbStatus.connected ? 'ACTIVA Y EN VIVO' : 'PENDIENTE DE ACTIVAR'}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {dbStatus.connected 
+                  ? 'Todos los cambios que guardes se sincronizan al instante en todos los dispositivos (móvil, tablet, PC) a través de la base de datos.' 
+                  : 'Para que los cambios se guarden en la base de datos y aparezcan en todos los celulares y PCs al instante, vincula la base de datos KV gratuita en Cloudflare.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 self-start md:self-center">
+            {!dbStatus.connected && (
+              <button
+                type="button"
+                onClick={() => setShowDbGuide(!showDbGuide)}
+                className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold transition flex items-center space-x-1.5"
+              >
+                <Server className="w-3.5 h-3.5" />
+                <span>{showDbGuide ? 'Ocultar Guía' : 'Activar Base de Datos'}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={refreshDbStatus}
+              title="Comprobar estado de conexión con la base de datos"
+              className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-mono transition flex items-center space-x-1"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Verificar</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable 1-Minute Guide for Cloudflare KV & External DB */}
+        {showDbGuide && !dbStatus.connected && (
+          <div className="mt-3 p-4 sm:p-5 rounded-xl bg-[#090b10] border border-amber-500/30 space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <h4 className="text-sm font-bold text-zinc-100 font-mono">
+                  Cómo conectar la Base de Datos Gratuita en Cloudflare (3 Clics rápidos)
+                </h4>
+              </div>
+              <button 
+                onClick={() => setShowDbGuide(false)}
+                className="text-zinc-500 hover:text-zinc-300 text-xs font-mono"
+              >
+                ✕ Cerrar
+              </button>
+            </div>
+
+            <ol className="text-xs text-zinc-300 space-y-2 list-decimal list-inside font-mono">
+              <li>
+                Inicia sesión en <a href="https://dash.cloudflare.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline">dash.cloudflare.com</a>.
+              </li>
+              <li>
+                En el menú de la izquierda ve a <b>Storage & Databases</b> &gt; <b>KV</b> &gt; Clic en <b>Create a namespace</b> y nómbralo: <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-amber-300 font-bold">KYRNFORGE_KV</span>.
+              </li>
+              <li>
+                Ve a <b>Workers & Pages</b> &gt; Clic en tu proyecto <b>kyrnforge</b> &gt; Pestaña <b>Settings</b> &gt; <b>Functions</b>.
+              </li>
+              <li>
+                Baja hasta la sección <b>KV namespace bindings</b> &gt; Clic en <b>Add binding</b>:
+                <div className="mt-1 pl-4 space-y-0.5 text-zinc-400">
+                  <div>• Variable name: <span className="text-emerald-400 font-bold">KYRNFORGE_KV</span></div>
+                  <div>• KV namespace: Selecciona el namespace que creaste (<span className="text-emerald-400">KYRNFORGE_KV</span>)</div>
+                </div>
+              </li>
+              <li>
+                Guarda los cambios. ¡Listo! Vuelve aquí y haz clic en "Verificar". Cada vez que guardes una app, se guardará en la nube y se verá en todos los dispositivos al instante.
+              </li>
+            </ol>
+
+            {/* Alternative: External Database URL (Firebase / Supabase) */}
+            <div className="pt-3 border-t border-zinc-800/80 space-y-2">
+              <span className="text-xs font-mono text-zinc-400 font-bold block">
+                Opción alternativa: Conectar URL de Base de Datos Externa (Firebase Realtime Database)
+              </span>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={customDbUrl}
+                  onChange={(e) => setCustomDbUrl(e.target.value)}
+                  placeholder="https://tu-proyecto-default-rtdb.firebaseio.com"
+                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-mono text-zinc-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('kyrnforge_custom_db_url', customDbUrl.trim());
+                    refreshDbStatus();
+                    showToast('✓ URL de Base de Datos guardada');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition active:scale-95"
+                >
+                  Conectar URL
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
 
         {/* ========================================================================= */}
         {/* TAB 1: CAROUSEL APPS MANAGEMENT                                           */}
@@ -1030,7 +1144,7 @@ export default function ModDashboard({ onNavigateHome }) {
                   Carrusel de Aplicaciones Disponibles
                 </h2>
                 <p className="text-xs text-zinc-400 mt-1 max-w-xl">
-                  Edita las aplicaciones que aparecen en el carrusel de un solo item. Los cambios se guardan al instante en tu navegador.
+                  Modifica cualquier dato de las aplicaciones. Al guardar, los cambios se envían directamente a la base de datos en la nube.
                 </p>
               </div>
 
@@ -1052,17 +1166,17 @@ export default function ModDashboard({ onNavigateHome }) {
                 </button>
 
                 <button
-                  onClick={syncAppsToGitHub}
-                  disabled={isSyncingGh}
-                  title="Sincronizar cambios directamente en GitHub para que se apliquen en todos los dispositivos y móviles"
-                  className={`px-3 py-2 rounded-lg border text-xs font-mono transition flex items-center space-x-1.5 ${
-                    isSyncingGh 
+                  onClick={() => saveApps(apps)}
+                  disabled={isSavingDb}
+                  title="Guardar todos los cambios en la base de datos en la nube"
+                  className={`px-3.5 py-2 rounded-lg border text-xs font-mono font-bold transition flex items-center space-x-1.5 active:scale-95 ${
+                    isSavingDb 
                       ? 'bg-zinc-800 text-zinc-400 border-zinc-700 cursor-wait' 
-                      : 'bg-emerald-950/40 hover:bg-emerald-900/60 border-emerald-500/40 text-emerald-400 hover:text-emerald-300 shadow-lg shadow-emerald-950/50 active:scale-95'
+                      : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20'
                   }`}
                 >
-                  <Globe2 className={`w-3.5 h-3.5 ${isSyncingGh ? 'animate-spin' : ''}`} />
-                  <span>{isSyncingGh ? 'Publicando...' : 'Publicar a la Nube'}</span>
+                  <Save className={`w-3.5 h-3.5 ${isSavingDb ? 'animate-spin' : ''}`} />
+                  <span>{isSavingDb ? 'Guardando...' : 'GUARDAR EN BD'}</span>
                 </button>
 
                 <button

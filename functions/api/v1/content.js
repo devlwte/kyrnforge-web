@@ -4,16 +4,18 @@
 export async function onRequestGet(context) {
   try {
     const { env, request } = context;
+    const kv = env?.KYRNFORGE_KV || env?.KV || env?.DB || env?.kyrnforge_kv;
 
-    // 1. If Cloudflare KV is configured
-    if (env && env.KYRNFORGE_KV) {
-      const apps = await env.KYRNFORGE_KV.get("available_apps", { type: "json" });
-      const projects = await env.KYRNFORGE_KV.get("projects", { type: "json" });
-      const siteSettings = await env.KYRNFORGE_KV.get("site_settings", { type: "json" });
+    // 1. If Cloudflare KV database is configured
+    if (kv) {
+      const apps = await kv.get("available_apps", { type: "json" });
+      const projects = await kv.get("projects", { type: "json" });
+      const siteSettings = await kv.get("site_settings", { type: "json" });
 
       if (apps || projects || siteSettings) {
         return new Response(JSON.stringify({
           source: "cloudflare-kv",
+          database: { connected: true, type: "Cloudflare KV" },
           availableApps: apps || null,
           projects: projects || null,
           siteSettings: siteSettings || null
@@ -21,7 +23,7 @@ export async function onRequestGet(context) {
           headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=30"
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
           }
         });
       }
@@ -37,6 +39,7 @@ export async function onRequestGet(context) {
 
       return new Response(JSON.stringify({
         source: "edge-static-json",
+        database: { connected: false, type: "none" },
         availableApps: resApps,
         projects: resProjects,
         siteSettings: resSettings
@@ -44,13 +47,14 @@ export async function onRequestGet(context) {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
-          "Cache-Control": "public, max-age=60"
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
         }
       });
     }
 
     return new Response(JSON.stringify({
       source: "edge-defaults",
+      database: { connected: false, type: "none" },
       message: "Operando con datos estaticos predeterminados del servidor."
     }), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
@@ -87,15 +91,17 @@ export async function onRequestPost(context) {
       });
     }
 
-    if (env && env.KYRNFORGE_KV) {
+    const kv = env?.KYRNFORGE_KV || env?.KV || env?.DB || env?.kyrnforge_kv;
+
+    if (kv) {
       if (Array.isArray(payload.availableApps)) {
-        await env.KYRNFORGE_KV.put("available_apps", JSON.stringify(payload.availableApps));
+        await kv.put("available_apps", JSON.stringify(payload.availableApps));
       }
       if (Array.isArray(payload.projects)) {
-        await env.KYRNFORGE_KV.put("projects", JSON.stringify(payload.projects));
+        await kv.put("projects", JSON.stringify(payload.projects));
       }
       if (payload.siteSettings) {
-        await env.KYRNFORGE_KV.put("site_settings", JSON.stringify(payload.siteSettings));
+        await kv.put("site_settings", JSON.stringify(payload.siteSettings));
       }
 
       return new Response(JSON.stringify({

@@ -134,6 +134,23 @@ export default function App() {
           return;
         }
 
+        // 1.5 External Database URL fallback (Firebase RTDB, Supabase, etc.)
+        const customDbUrl = localStorage.getItem('kyrnforge_custom_db_url');
+        if (customDbUrl) {
+          try {
+            const cleanUrl = customDbUrl.replace(/\/$/, '');
+            const target = cleanUrl.endsWith('.json') ? cleanUrl : `${cleanUrl}/apps.json`;
+            const customApps = await fetch(`${target}?t=${timestamp}`).then(r => r.ok ? r.json() : null).catch(() => null);
+            if (customApps && Array.isArray(customApps) && customApps.length > 0) {
+              setAvailableApps(customApps);
+              localStorage.setItem('kyrnforge_available_apps', JSON.stringify(customApps));
+              return;
+            }
+          } catch {
+            // fallback to static JSON
+          }
+        }
+
         // 2. Direct static JSON fallback with cache-busting
         const [resApps, resProjects, resSettings] = await Promise.all([
           fetch(`/data/apps.json?t=${timestamp}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),

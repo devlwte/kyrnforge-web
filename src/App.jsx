@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Shield, 
   Terminal, 
@@ -19,16 +19,148 @@ import {
   Globe2,
   CheckCircle,
   Copy,
-  Check
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X
 } from 'lucide-react';
+import ModDashboard from './components/ModDashboard';
+import { initialAvailableApps } from './data/defaultApps';
+import { initialProjects, initialSiteSettings } from './data/defaultSiteData';
+
+// Icon mapping helper for serializable feature tags
+const ICON_MAP = {
+  Shield,
+  Layers,
+  Cpu,
+  Server,
+  Zap,
+  Terminal,
+  Gamepad2,
+  ShoppingBag,
+  Code2,
+  Package,
+  Sparkles,
+  Download,
+  Key,
+  Globe2,
+  Activity
+};
 
 export default function App() {
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [selectedEndpoint, setSelectedEndpoint] = useState('status');
   const [apiResponse, setApiResponse] = useState(null);
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [latencyMs, setLatencyMs] = useState(null);
   const [projectFilter, setProjectFilter] = useState('all');
   const [copiedKpmLink, setCopiedKpmLink] = useState(false);
+  const [currentAppIndex, setCurrentAppIndex] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Synchronize available apps from localStorage (or defaults)
+  const [availableApps, setAvailableApps] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kyrnforge_available_apps');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error("Error loading apps from localStorage", e);
+    }
+    return initialAvailableApps;
+  });
+
+  // Synchronize projects catalog from localStorage (or defaults)
+  const [projects, setProjects] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kyrnforge_projects');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error("Error loading projects from localStorage", e);
+    }
+    return initialProjects;
+  });
+
+  // Synchronize site settings (hero & metrics) from localStorage (or defaults)
+  const [siteSettings, setSiteSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kyrnforge_site_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.hero) return parsed;
+      }
+    } catch (e) {
+      console.error("Error loading siteSettings from localStorage", e);
+    }
+    return initialSiteSettings;
+  });
+
+  // Client-side history popstate listener for /mod route
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Sync availableApps, projects, and siteSettings when returning to public view or on external storage change
+  useEffect(() => {
+    if (currentPath !== '/mod' && currentPath !== '/mod/') {
+      try {
+        const savedApps = localStorage.getItem('kyrnforge_available_apps');
+        if (savedApps) {
+          const parsed = JSON.parse(savedApps);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAvailableApps(parsed);
+          }
+        }
+        const savedProjects = localStorage.getItem('kyrnforge_projects');
+        if (savedProjects) {
+          const parsed = JSON.parse(savedProjects);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setProjects(parsed);
+          }
+        }
+        const savedSettings = localStorage.getItem('kyrnforge_site_settings');
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed && parsed.hero) {
+            setSiteSettings(parsed);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [currentPath]);
+
+  // Adjust carousel index if apps array shrinks
+  useEffect(() => {
+    if (availableApps.length > 0 && currentAppIndex >= availableApps.length) {
+      setCurrentAppIndex(Math.max(0, availableApps.length - 1));
+    }
+  }, [availableApps.length, currentAppIndex]);
+
+  // Centralized Navigation Links (Easily expandable for future additions)
+  const navItems = [
+    { id: 'proyectos', label: 'PROYECTOS', href: '#proyectos' },
+    { id: 'descargas', label: 'DESCARGAS', href: '#descargas' },
+    { id: 'api', label: 'API GATEWAY', href: '#api' },
+    { id: 'github', label: 'GITHUB', href: 'https://github.com/devlwte', isExternal: true }
+  ];
 
   const fetchLiveApi = async (endpoint = selectedEndpoint) => {
     setIsLoadingApi(true);
@@ -66,105 +198,50 @@ export default function App() {
     }
   };
 
-  const copyDownloadUrl = () => {
-    navigator.clipboard.writeText("https://github.com/devlwte/kpm-studio/releases/download/v1.0.0/Krypton-Package-Manager-Setup-v1.0.0.zip");
-    setCopiedKpmLink(true);
-    setTimeout(() => setCopiedKpmLink(false), 2000);
+  const [copiedAppId, setCopiedAppId] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(null);
+
+  const prevApp = () => {
+    setCurrentAppIndex((prev) => (prev === 0 ? availableApps.length - 1 : prev - 1));
   };
 
-  // Projects Catalog
-  const projects = [
-    {
-      id: 'kpm',
-      category: 'featured',
-      categoryLabel: 'Software de Empaquetado & Compresión',
-      title: 'Krypton Package Manager (KPM)',
-      version: 'v1.0.0 Oficial',
-      status: 'production',
-      statusLabel: 'Listo para Producción',
-      badgeColor: 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
-      iconImg: '/projects/kpm.png',
-      icon: Package,
-      iconColor: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30',
-      description: 'Suite integral para crear instaladores y paquetes portables de Windows. Combina compresión Brotli Ultra (ahorro >99% en imágenes .ISO) con Deflate 9, Bóveda criptográfica militar AES-256-GCM, modo sigilo anónimo y extracción por streaming sin archivos temporales.',
-      tags: ['Bóveda AES-256-GCM', 'Compresión Brotli Ultra', 'Bytecode V8 Blindado', 'Windows 10/11'],
-      downloadUrl: 'https://github.com/devlwte/kpm-studio/releases/download/v1.0.0/Krypton-Package-Manager-Setup-v1.0.0.zip',
-      repoUrl: 'https://github.com/devlwte/kpm-studio',
-      isFlagship: true
-    },
-    {
-      id: 'playwarp',
-      category: 'gaming',
-      categoryLabel: 'Videojuegos & Plataforma',
-      title: 'PlayWarp Launcher',
-      version: 'v1.0 (En Desarrollo)',
-      status: 'dev',
-      statusLabel: 'En Desarrollo Activo',
-      badgeColor: 'border-amber-500/40 text-amber-400 bg-amber-950/30',
-      iconImg: '/projects/playwarp.svg',
-      icon: Gamepad2,
-      iconColor: 'text-amber-400 bg-amber-950/40 border-amber-500/30',
-      description: 'Launcher de videojuegos universal y agregador de tiendas legales. Diseñado para explorar, comprar y descargar títulos de distribuidores autorizados en una sola interfaz ligera con catálogo multi-página, optimizado para PC y Steam Deck (100% legal y sin bloatware).',
-      tags: ['Game Launcher', 'Catálogo Multi-Tienda', '100% Legal', 'Soporte PC / Deck'],
-      repoUrl: null,
-      isFlagship: false
-    },
-    {
-      id: 'kyrnex',
-      category: 'tools',
-      categoryLabel: 'Plataforma & Runtime Local',
-      title: 'Kyrnex Platform',
-      version: 'v1.0.0 Estable',
-      status: 'production',
-      statusLabel: 'Producción Estable',
-      badgeColor: 'border-purple-500/40 text-purple-400 bg-purple-950/30',
-      iconImg: '/projects/kyrnex.png',
-      icon: Server,
-      iconColor: 'text-purple-400 bg-purple-950/40 border-purple-500/30',
-      description: 'Plataforma integral de ejecución y gestión de aplicaciones web locales (Local Web Applications Runtime & Manager Platform). Permite levantar servidores locales instantáneos, orquestar microservicios con DynExpress y probar APIs directamente en Windows sin configuraciones engorrosas.',
-      tags: ['Local Web Runtime', 'DynExpress Core', 'Manager de Servidores', 'Cero Configuración'],
-      repoUrl: null,
-      isFlagship: false
-    },
-    {
-      id: '2dgo',
-      category: 'gaming',
-      categoryLabel: 'Motor de Videojuegos',
-      title: '2DGO Engine',
-      version: 'Core Architecture',
-      status: 'dev',
-      statusLabel: 'Arquitectura & Core',
-      badgeColor: 'border-cyan-500/40 text-cyan-400 bg-cyan-950/30',
-      iconImg: '/projects/2dgo.png',
-      icon: Code2,
-      iconColor: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30',
-      description: 'Framework modular de alto rendimiento para renderizado 2D, físicas de plataformas ágiles y videojuegos retro-modernos. Diseñado para ofrecer máxima tasa de cuadros por segundo con un consumo ultra bajo de CPU y memoria en cualquier computadora.',
-      tags: ['2D Game Engine', 'Render Ultra-Fluido', 'Física de Plataformas', 'Bajo Consumo'],
-      repoUrl: null,
-      isFlagship: false
-    },
-    {
-      id: 'getgame',
-      category: 'tools',
-      categoryLabel: 'Herramienta de Distribución',
-      title: 'GetGame Utility',
-      version: 'Utility Tool',
-      status: 'planned',
-      statusLabel: 'Utilidad Nativa',
-      badgeColor: 'border-blue-500/40 text-blue-400 bg-blue-950/30',
-      iconImg: null, // Sin icono asignado todavía -> usa el icono por defecto
-      icon: Download,
-      iconColor: 'text-blue-400 bg-blue-950/40 border-blue-500/30',
-      description: 'Herramienta nativa de distribución rápida y verificación criptográfica de integridad para paquetes y assets de videojuegos. Opera sin servicios invasivos en segundo plano ni telemetría oculta.',
-      tags: ['Verificación de Integridad', 'Descarga Segura', 'Sin Telemetría Invasiva'],
-      repoUrl: null,
-      isFlagship: false
-    }
-  ];
+  const nextApp = () => {
+    setCurrentAppIndex((prev) => (prev === availableApps.length - 1 ? 0 : prev + 1));
+  };
 
-  const filteredProjects = projectFilter === 'all' 
-    ? projects 
-    : projects.filter(p => p.category === projectFilter || (projectFilter === 'gaming' && p.category === 'gaming') || (projectFilter === 'tools' && (p.category === 'tools' || p.category === 'featured')));
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null) return;
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (diff > 50) {
+      nextApp();
+    } else if (diff < -50) {
+      prevApp();
+    }
+    setTouchStartX(null);
+  };
+
+  const copyDownloadUrl = (appId, url) => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopiedAppId(appId);
+    setTimeout(() => setCopiedAppId(null), 2000);
+  };
+
+  const filteredProjects = (projects || []).filter(p => {
+    if (projectFilter === 'all') return true;
+    if (projectFilter === 'gaming') return p.category === 'gaming';
+    if (projectFilter === 'tools') return p.category === 'tools' || p.category === 'featured';
+    return p.category === projectFilter;
+  });
+
+  // Render Moderator / Admin Dashboard when accessing /mod
+  if (currentPath === '/mod' || currentPath === '/mod/') {
+    return <ModDashboard onNavigateHome={() => navigateTo('/')} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#06070a] text-zinc-100 font-sans bg-tech-grid relative overflow-x-hidden selection:bg-cyan-500/20 selection:text-cyan-300">
@@ -175,12 +252,12 @@ export default function App() {
       <div className="fixed bottom-[-100px] left-[10%] w-[500px] h-[500px] bg-purple-950/15 blur-[160px] rounded-full pointer-events-none -z-10" />
 
       {/* Top Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#06070a]/85 border-b border-zinc-900/80">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#06070a]/90 border-b border-zinc-900/80 w-full">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between w-full">
           
           {/* Brand Identity */}
-          <div className="flex items-center space-x-3.5">
-            <div className="w-9 h-9 rounded-xl bg-[#0c0e17] border border-zinc-800/90 flex items-center justify-center p-2 shadow-inner">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[#0c0e17] border border-zinc-800/90 flex items-center justify-center p-2 shadow-inner flex-shrink-0">
               <img src="/logo.svg" alt="KyrnForge Logo" className="w-full h-full object-contain" />
             </div>
             <div>
@@ -196,177 +273,321 @@ export default function App() {
             </div>
           </div>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav (Dynamic from navItems, easy to expand in the future) */}
           <nav className="hidden md:flex items-center space-x-7 text-xs font-mono text-zinc-400">
-            <a href="#proyectos" className="hover:text-cyan-400 transition">PROYECTOS</a>
-            <a href="#kpm" className="hover:text-cyan-400 transition">KPM STUDIO</a>
-            <a href="#api" className="hover:text-cyan-400 transition">API GATEWAY</a>
-            <a href="https://github.com/devlwte" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition flex items-center space-x-1.5">
-              <span>GITHUB</span>
-              <ExternalLink className="w-3 h-3 text-zinc-500" />
-            </a>
+            {navItems.map((item) => (
+              <a 
+                key={item.id}
+                href={item.href} 
+                target={item.isExternal ? '_blank' : '_self'}
+                rel={item.isExternal ? 'noreferrer' : undefined}
+                className="hover:text-cyan-400 transition flex items-center space-x-1.5"
+              >
+                <span>{item.label}</span>
+                {item.isExternal && <ExternalLink className="w-3 h-3 text-zinc-500" />}
+              </a>
+            ))}
           </nav>
 
-          {/* Live Edge Status */}
+          {/* Header Right Actions: Status & Mobile Hamburger Toggle */}
           <div className="flex items-center space-x-2.5">
-            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-mono text-[11px]">
+            {/* Live Edge Status */}
+            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-mono text-[11px]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="font-semibold tracking-wide">kyrnforge.dev</span>
             </div>
+
+            {/* Mobile Menu Toggle Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú de navegación"}
+              className="md:hidden p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 text-zinc-300 hover:text-cyan-400 hover:border-zinc-700 transition active:scale-95 flex items-center justify-center shadow-sm"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-cyan-400" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
 
         </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-b border-zinc-800/80 bg-[#07090e]/95 backdrop-blur-2xl px-5 py-4 space-y-3 font-mono text-xs animate-fadeIn shadow-2xl">
+            <div className="flex flex-col space-y-1.5">
+              {navItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  target={item.isExternal ? '_blank' : '_self'}
+                  rel={item.isExternal ? 'noreferrer' : undefined}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0b0e17] border border-zinc-800/80 text-zinc-300 hover:text-cyan-300 hover:border-cyan-500/40 hover:bg-cyan-950/30 transition active:scale-[0.99]"
+                >
+                  <span className="font-bold tracking-wider">{item.label}</span>
+                  {item.isExternal ? (
+                    <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
+                  ) : (
+                    <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+                  )}
+                </a>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-zinc-900/90 flex items-center justify-between text-[11px] text-zinc-500">
+              <span>CLOUD EDGE ROUTING</span>
+              <span className="flex items-center space-x-1.5 text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>kyrnforge.dev</span>
+              </span>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigateTo('/mod');
+                }}
+                className="w-full py-2 px-3 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-cyan-400 text-xs font-mono transition flex items-center justify-center space-x-2"
+              >
+                <Key className="w-3.5 h-3.5 text-zinc-500" />
+                <span>PANEL MOD / ADMIN (/mod)</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-6 py-16 space-y-32">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 space-y-20 sm:space-y-32">
 
         {/* Hero Section */}
-        <section className="space-y-6 pt-4 text-center sm:text-left max-w-3xl">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-md bg-[#0d0f18] border border-zinc-800 text-cyan-400 text-xs font-mono">
-            <Zap className="w-3.5 h-3.5 text-cyan-400" />
-            <span>FORJA INDEPENDIENTE DE SOFTWARE NATIVO & VIDEOJUEGOS</span>
+        <section className="space-y-6 pt-2 sm:pt-4 text-center sm:text-left max-w-3xl overflow-hidden">
+          <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-md bg-[#0d0f18] border border-zinc-800 text-cyan-400 text-[10px] sm:text-xs font-mono max-w-full overflow-hidden">
+            <Zap className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+            <span className="truncate block">{siteSettings.hero?.tagline || 'FORJA INDEPENDIENTE DE SOFTWARE NATIVO & VIDEOJUEGOS'}</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-100 leading-[1.12]">
-            Herramientas nativas, compresión extrema y experiencias de juego.
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-100 leading-[1.15] break-words">
+            {siteSettings.hero?.title || 'Herramientas nativas, compresión extrema y experiencias de juego.'}
           </h1>
 
-          <p className="text-zinc-400 text-base sm:text-lg leading-relaxed max-w-2xl font-normal">
-            Desarrollo independiente sin dependencias infladas. Enfocados en software de alto rendimiento para Windows, seguridad criptográfica Bóveda AES-256, lanzadores de juegos y entornos de ejecución web ligeros.
+          <p className="text-zinc-400 text-sm sm:text-lg leading-relaxed max-w-2xl font-normal">
+            {siteSettings.hero?.description || 'Desarrollo independiente sin dependencias infladas. Enfocados en software de alto rendimiento para Windows, seguridad criptográfica Bóveda AES-256, lanzadores de juegos y entornos de ejecución web ligeros.'}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 pt-4 justify-center sm:justify-start">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 justify-center sm:justify-start">
             <a 
-              href="#kpm"
-              className="px-6 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs font-mono transition shadow-lg shadow-cyan-500/25 flex items-center space-x-2 active:scale-95"
+              href="#descargas"
+              className="px-6 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs font-mono transition shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 active:scale-95"
             >
-              <span>EXPLORAR KPM STUDIO</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5" />
+              <span>{siteSettings.hero?.buttonAppsText || 'APPS DISPONIBLES'}</span>
             </a>
 
             <a 
               href="#proyectos"
-              className="px-6 py-3 rounded-lg bg-[#0d0f18] hover:bg-[#141724] text-zinc-300 border border-zinc-800 font-mono text-xs transition flex items-center space-x-2"
+              className="px-6 py-3 rounded-lg bg-[#0d0f18] hover:bg-[#141724] text-zinc-300 border border-zinc-800 font-mono text-xs transition flex items-center justify-center space-x-2"
             >
               <Gamepad2 className="w-4 h-4 text-amber-400" />
-              <span>CATÁLOGO DE PROYECTOS</span>
+              <span>{siteSettings.hero?.buttonProjectsText || 'CATÁLOGO DE PROYECTOS'}</span>
             </a>
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-zinc-900/90 font-mono text-xs">
-            <div className="p-3 rounded-lg bg-[#0b0d14] border border-zinc-900">
-              <div className="text-zinc-500 text-[10px]">LENGUAJES & RUNTIME</div>
-              <div className="text-zinc-200 font-bold mt-0.5">Nativo / Bytecode V8</div>
-            </div>
-            <div className="p-3 rounded-lg bg-[#0b0d14] border border-zinc-900">
-              <div className="text-zinc-500 text-[10px]">SEGURIDAD CRIPTOGRÁFICA</div>
-              <div className="text-cyan-400 font-bold mt-0.5">Bóveda AES-256-GCM</div>
-            </div>
-            <div className="p-3 rounded-lg bg-[#0b0d14] border border-zinc-900">
-              <div className="text-zinc-500 text-[10px]">INFRAESTRUCTURA WEB</div>
-              <div className="text-emerald-400 font-bold mt-0.5">Cloudflare Global Edge</div>
-            </div>
-            <div className="p-3 rounded-lg bg-[#0b0d14] border border-zinc-900">
-              <div className="text-zinc-500 text-[10px]">LICENCIAMIENTO</div>
-              <div className="text-purple-400 font-bold mt-0.5">Freeware & Legal</div>
-            </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pt-6 border-t border-zinc-900/90 font-mono text-xs text-left">
+            {(siteSettings.metrics || []).map((m, idx) => (
+              <div key={idx} className="p-2.5 sm:p-3 rounded-lg bg-[#0b0d14] border border-zinc-900 overflow-hidden">
+                <div className="text-zinc-500 text-[9px] sm:text-[10px] truncate">{m.label}</div>
+                <div className={`${m.color || 'text-zinc-200'} font-bold mt-0.5 text-xs sm:text-sm truncate`}>{m.value}</div>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Flagship Product Showcase (KPM Studio) */}
-        <section id="kpm" className="space-y-6 scroll-mt-24">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-zinc-900 pb-4 gap-2">
+        {/* Software & Apps Disponibles para Descarga (Carousel de un solo item) */}
+        <section id="descargas" className="space-y-6 scroll-mt-24 relative">
+          <div id="kpm" className="absolute -top-24 pointer-events-none" />
+
+          {/* Section Header with Carousel Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-zinc-900 pb-4 gap-3 sm:gap-4">
             <div>
               <div className="text-xs font-mono text-cyan-400 tracking-wider flex items-center space-x-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>LANZAMIENTO INSIGNIA OFICIAL</span>
+                <Download className="w-3.5 h-3.5 text-cyan-400" />
+                <span>SOFTWARE LISTO PARA DESCARGAR</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-zinc-100 mt-1">
-                Krypton Package Manager (KPM)
+                Aplicaciones Disponibles
               </h2>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded border border-emerald-500/30">
-                v1.0.0 Disponible
-              </span>
+
+            {/* Carousel Navigation Toolbar */}
+            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3">
+              <div className="text-xs font-mono text-zinc-400 bg-zinc-900/90 px-3 py-1.5 rounded-lg border border-zinc-800 flex items-center space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-zinc-200 font-bold">{availableApps[currentAppIndex]?.tag}</span>
+                <span className="text-zinc-600">/</span>
+                <span className="text-zinc-500">0{availableApps.length}</span>
+              </div>
+
+              <div className="flex items-center space-x-1.5">
+                <button
+                  onClick={prevApp}
+                  aria-label="Aplicación anterior"
+                  title="Anterior aplicación"
+                  className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={nextApp}
+                  aria-label="Siguiente aplicación"
+                  title="Siguiente aplicación"
+                  className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="bg-[#0a0c12] border border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden glow-cyan">
-            
-            <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between">
-              <div className="space-y-4 max-w-2xl">
-                <div className="flex items-center space-x-3.5">
-                  <div className="w-14 h-14 rounded-2xl bg-[#0c0e17] border border-cyan-500/40 overflow-hidden flex items-center justify-center shadow-lg shadow-cyan-500/10 flex-shrink-0">
-                    <img 
-                      src="/projects/kpm.png" 
-                      alt="KPM Studio Icon" 
-                      className="w-full h-full object-cover scale-[1.12]"
-                      onError={(e) => {
-                        e.currentTarget.src = "/projects/default-app.svg";
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-zinc-100">KPM Studio Suite</h3>
-                    <p className="text-xs font-mono text-zinc-400">Windows 10 & 11 (64-bit) · Instalador Setup Oficial y Modo Portable</p>
-                  </div>
-                </div>
+          {/* Active Carousel Card Container with Smooth Sliding Track */}
+          <div 
+            className={`bg-[#0a0c12] border border-zinc-800 rounded-2xl relative overflow-hidden transition-all duration-500 ${availableApps[currentAppIndex]?.glowClass}`}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Horizontal Sliding Track */}
+            <div className="overflow-hidden w-full">
+              <div 
+                className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                style={{ transform: `translateX(-${currentAppIndex * 100}%)` }}
+              >
+                {availableApps.map((app) => (
+                  <div 
+                    key={app.id}
+                    className="w-full flex-shrink-0 p-5 sm:p-8 space-y-6"
+                  >
+                    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-center justify-between">
+                      <div className="space-y-4 max-w-2xl">
+                        <div className="flex items-center space-x-3.5">
+                          <div className={`w-14 h-14 rounded-2xl bg-[#0c0e17] border ${app.themeBorder} overflow-hidden flex items-center justify-center shadow-lg flex-shrink-0`}>
+                            <img 
+                              src={app.iconImg} 
+                              alt={app.title} 
+                              className={`w-full h-full object-cover ${app.iconScale}`}
+                              onError={(e) => {
+                                e.currentTarget.src = "/projects/default-app.svg";
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-xl font-bold text-zinc-100">{app.title}</h3>
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${app.badgeColor}`}>
+                                {app.badge}
+                              </span>
+                            </div>
+                            <p className="text-xs font-mono text-zinc-400 mt-0.5">{app.system}</p>
+                          </div>
+                        </div>
 
-                <p className="text-zinc-300 text-sm leading-relaxed">
-                  Suite moderna de empaquetado y compresión de software para desarrolladores. Diseñada para sustituir herramientas tradicionales engorrosas mediante una interfaz visual cibernética, compresión extrema <b>Brotli Ultra</b> (ahorro superior al 99% en imágenes crudas <code>.iso</code>), Bóveda criptográfica militar <b>AES-256-GCM</b> con protección Anti-Tamper, <b>Modo Sigilo</b> con identificadores anónimos 16-hex sin extensión y extracción de flujo multi-volumen continua sin archivos temporales.
-                </p>
+                        <p className="text-zinc-300 text-sm leading-relaxed">
+                          {app.description}
+                        </p>
 
-                {/* Feature Tags */}
-                <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
-                  <div className="px-3 py-1.5 rounded-md bg-[#10131e] border border-zinc-800 text-zinc-300 flex items-center space-x-2">
-                    <Shield className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Cifrado Bóveda AES-256</span>
+                        {/* Feature Tags */}
+                        <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
+                          {app.features && app.features.map((feat, idx) => {
+                            const FeatIcon = feat.icon || (feat.iconName && ICON_MAP[feat.iconName]) || Zap;
+                            return (
+                              <div 
+                                key={idx}
+                                className="px-3 py-1.5 rounded-md bg-[#10131e] border border-zinc-800 text-zinc-300 flex items-center space-x-2"
+                              >
+                                <FeatIcon className={`w-3.5 h-3.5 ${feat.color || 'text-cyan-400'}`} />
+                                <span>{feat.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Action Box */}
+                      <div className="flex flex-col gap-3 w-full lg:w-72 lg:min-w-[260px] flex-shrink-0 bg-[#07080d] p-4 sm:p-5 rounded-xl border border-zinc-800/80">
+                        <div className="text-xs font-mono text-zinc-400 text-center pb-1 flex items-center justify-center space-x-1.5">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Descarga oficial verificada</span>
+                        </div>
+
+                        <a
+                          href={app.downloadUrl}
+                          target={app.downloadUrl.startsWith('http') ? '_blank' : '_self'}
+                          rel="noreferrer"
+                          className={`px-5 py-3 rounded-lg ${app.btnBg} font-mono text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg active:scale-95 text-center`}
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>{app.downloadLabel}</span>
+                        </a>
+
+                        <button
+                          onClick={() => copyDownloadUrl(app.id, app.downloadUrl)}
+                          className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-mono transition flex items-center justify-center space-x-2 active:scale-95"
+                        >
+                          {copiedAppId === app.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-500" />}
+                          <span>{copiedAppId === app.id ? 'ENLACE COPIADO' : 'COPIAR ENLACE'}</span>
+                        </button>
+
+                        <a
+                          href={app.repoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-[11px] font-mono transition flex items-center justify-center space-x-1.5"
+                        >
+                          <span>Ver repositorio en GitHub</span>
+                          <ExternalLink className="w-3 h-3 text-zinc-500" />
+                        </a>
+
+                        <div className="text-[10px] font-mono text-zinc-500 text-center pt-1 border-t border-zinc-900">
+                          {app.metaInfo}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="px-3 py-1.5 rounded-md bg-[#10131e] border border-zinc-800 text-zinc-300 flex items-center space-x-2">
-                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Brotli Ultra & Deflate 9</span>
-                  </div>
-                  <div className="px-3 py-1.5 rounded-md bg-[#10131e] border border-zinc-800 text-zinc-300 flex items-center space-x-2">
-                    <Cpu className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Bytecode V8 Blindado</span>
-                  </div>
-                </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Carousel Fast Selector Tabs & Dots (Anchored at the bottom) */}
+            <div className="mx-4 sm:mx-8 py-4 border-t border-zinc-900/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-mono text-zinc-500 mr-1 hidden sm:inline">EXPLORAR APPS:</span>
+                {availableApps.map((app, idx) => (
+                  <button
+                    key={app.id}
+                    onClick={() => setCurrentAppIndex(idx)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition flex items-center space-x-2 ${
+                      currentAppIndex === idx
+                        ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                        : 'bg-[#090b10] text-zinc-400 border-zinc-900 hover:text-zinc-200 hover:border-zinc-800'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${currentAppIndex === idx ? 'bg-cyan-400 animate-pulse' : 'bg-zinc-600'}`} />
+                    <span>{app.tag} · {app.shortName}</span>
+                  </button>
+                ))}
               </div>
 
-              {/* Action Box */}
-              <div className="flex flex-col gap-3 min-w-[240px] bg-[#07080d] p-5 rounded-xl border border-zinc-800/80">
-                <div className="text-xs font-mono text-zinc-400 text-center pb-1">
-                  Descarga oficial verificada
-                </div>
-
-                <a
-                  href="https://github.com/devlwte/kpm-studio/releases/download/v1.0.0/Krypton-Package-Manager-Setup-v1.0.0.zip"
-                  className="px-5 py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 active:scale-95 text-center"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>DESCARGAR SETUP (.ZIP)</span>
-                </a>
-
-                <button
-                  onClick={copyDownloadUrl}
-                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-mono transition flex items-center justify-center space-x-2"
-                >
-                  {copiedKpmLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-500" />}
-                  <span>{copiedKpmLink ? 'ENLACE COPIADO' : 'COPIAR ENLACE'}</span>
-                </button>
-
-                <a
-                  href="https://github.com/devlwte/kpm-studio"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-[11px] font-mono transition flex items-center justify-center space-x-1.5"
-                >
-                  <span>Ver repositorio en GitHub</span>
-                  <ExternalLink className="w-3 h-3 text-zinc-500" />
-                </a>
+              {/* Bullet progress indicators */}
+              <div className="flex items-center space-x-2">
+                {availableApps.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentAppIndex(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      currentAppIndex === idx ? 'w-7 bg-cyan-400' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
+                    }`}
+                    aria-label={`Ir al elemento ${idx + 1}`}
+                  />
+                ))}
               </div>
             </div>
 
@@ -412,10 +633,10 @@ export default function App() {
               return (
                 <div 
                   key={p.id}
-                  className="bg-[#090b10] border border-zinc-900 hover:border-zinc-800 rounded-xl p-6 space-y-4 transition duration-200 flex flex-col justify-between"
+                  className="bg-[#090b10] border border-zinc-900 hover:border-zinc-800 rounded-xl p-5 sm:p-6 space-y-4 transition duration-200 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3">
                       <div className="flex items-center space-x-3.5">
                         <div className="w-12 h-12 rounded-xl bg-[#0c0e17] border border-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm relative group-hover:border-zinc-700 transition">
                           {p.iconImg ? (
@@ -449,7 +670,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border whitespace-nowrap ${p.badgeColor}`}>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border self-start sm:self-auto whitespace-nowrap ${p.badgeColor}`}>
                         {p.statusLabel}
                       </span>
                     </div>
@@ -461,7 +682,7 @@ export default function App() {
 
                   <div className="space-y-3 pt-3 border-t border-zinc-900/80">
                     <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
-                      {p.tags.map((t, idx) => (
+                      {p.tags && p.tags.map((t, idx) => (
                         <span key={idx} className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
                           {t}
                         </span>
@@ -498,12 +719,12 @@ export default function App() {
             </p>
           </div>
 
-          <div className="bg-[#090b10] border border-zinc-800 rounded-xl p-6 space-y-4 font-mono">
+          <div className="bg-[#090b10] border border-zinc-800 rounded-xl p-4 sm:p-6 space-y-4 font-mono">
             {/* Endpoint Selector Tabs */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 pb-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-zinc-500 font-bold">MÉTODO:</span>
-                <div className="flex space-x-1 bg-[#050608] p-1 rounded-md border border-zinc-900 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
+              <div className="flex items-center space-x-2 overflow-x-auto max-w-full">
+                <span className="text-xs text-zinc-500 font-bold flex-shrink-0">MÉTODO:</span>
+                <div className="flex space-x-1 bg-[#050608] p-1 rounded-md border border-zinc-900 text-xs flex-shrink-0">
                   <button
                     onClick={() => { setSelectedEndpoint('status'); fetchLiveApi('status'); }}
                     className={`px-2.5 py-1 rounded transition ${selectedEndpoint === 'status' ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40' : 'text-zinc-400 hover:text-zinc-200'}`}
@@ -528,7 +749,7 @@ export default function App() {
               <button
                 onClick={() => fetchLiveApi(selectedEndpoint)}
                 disabled={isLoadingApi}
-                className="px-4 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition flex items-center space-x-2 border border-zinc-700 active:scale-95"
+                className="w-full sm:w-auto justify-center px-4 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition flex items-center space-x-2 border border-zinc-700 active:scale-95"
               >
                 <Activity className={`w-3.5 h-3.5 text-cyan-400 ${isLoadingApi ? 'animate-spin' : ''}`} />
                 <span>{isLoadingApi ? 'CONSULTANDO...' : 'CONSULTAR EN VIVO'}</span>
@@ -536,9 +757,9 @@ export default function App() {
             </div>
 
             {/* URL Display */}
-            <div className="flex items-center space-x-2 text-xs text-zinc-400 bg-[#050608] px-3 py-2 rounded border border-zinc-900">
-              <span className="text-emerald-400 font-bold">{selectedEndpoint === 'auth' ? 'POST' : 'GET'}</span>
-              <span className="text-zinc-200">https://kyrnforge.dev/api/v1/{selectedEndpoint}</span>
+            <div className="flex items-center space-x-2 text-xs text-zinc-400 bg-[#050608] px-3 py-2 rounded border border-zinc-900 overflow-x-auto max-w-full">
+              <span className="text-emerald-400 font-bold flex-shrink-0">{selectedEndpoint === 'auth' ? 'POST' : 'GET'}</span>
+              <span className="text-zinc-200 truncate">https://kyrnforge.dev/api/v1/{selectedEndpoint}</span>
             </div>
 
             {/* Terminal Window */}
@@ -552,7 +773,7 @@ export default function App() {
                     </span>
                     {latencyMs && <span className="text-cyan-400">Latencia Edge: {latencyMs} ms</span>}
                   </div>
-                  <pre className="text-emerald-400 text-xs leading-relaxed">
+                  <pre className="text-emerald-400 text-xs leading-relaxed overflow-x-auto">
                     {JSON.stringify(apiResponse, null, 2)}
                   </pre>
                 </div>
@@ -569,21 +790,29 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 mt-32 py-12 text-xs font-mono text-zinc-500">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-zinc-900 mt-20 sm:mt-32 py-10 sm:py-12 text-xs font-mono text-zinc-500">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center space-x-2">
             <span className="font-bold text-zinc-300">KYRNFORGE</span>
             <span>·</span>
             <span>Digital Engineering & Software Forge</span>
           </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-4 sm:gap-6">
             <a href="https://github.com/devlwte/kpm-studio/blob/main/LICENSE" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition">
               Licencia KPM
             </a>
             <a href="https://github.com/devlwte" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition">
               GitHub (@devlwte)
             </a>
+            <button
+              onClick={() => navigateTo('/mod')}
+              className="hover:text-cyan-400 text-zinc-600 transition flex items-center space-x-1"
+              title="Panel de Gestión & Mod (/mod)"
+            >
+              <Key className="w-3 h-3" />
+              <span>/MOD</span>
+            </button>
             <span className="text-zinc-600">2026</span>
           </div>
         </div>

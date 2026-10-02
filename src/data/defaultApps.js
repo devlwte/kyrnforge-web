@@ -1,0 +1,81 @@
+// Default applications for the KyrnForge Downloads Carousel
+export const initialAvailableApps = [
+  {
+    id: 'kpm',
+    tag: '01',
+    shortName: 'KPM Studio',
+    title: 'Krypton Package Manager (KPM Studio)',
+    badge: 'v1.0.0 Oficial',
+    badgeColor: 'border-emerald-500/30 bg-emerald-950/40 text-emerald-400',
+    category: 'Software de Empaquetado & Compresión',
+    system: 'Windows 10 & 11 (64-bit) · Instalador Setup Oficial y Modo Portable',
+    iconImg: '/projects/kpm.png',
+    iconScale: 'scale-[1.12]',
+    glowClass: 'glow-cyan',
+    themeBorder: 'border-cyan-500/40',
+    btnBg: 'bg-cyan-500 hover:bg-cyan-400 text-zinc-950 shadow-cyan-500/25',
+    accentText: 'text-cyan-400',
+    description: 'Suite moderna de empaquetado y compresión de software para desarrolladores. Diseñada para sustituir herramientas tradicionales engorrosas mediante una interfaz visual cibernética, compresión extrema Brotli Ultra (ahorro superior al 99% en imágenes crudas .iso), Bóveda criptográfica militar AES-256-GCM con protección Anti-Tamper, Modo Sigilo con identificadores anónimos 16-hex sin extensión y extracción de flujo multi-volumen continua sin archivos temporales.',
+    features: [
+      { label: 'Cifrado Bóveda AES-256', iconName: 'Shield', color: 'text-cyan-400' },
+      { label: 'Brotli Ultra & Deflate 9', iconName: 'Layers', color: 'text-emerald-400' },
+      { label: 'Bytecode V8 Blindado', iconName: 'Cpu', color: 'text-purple-400' }
+    ],
+    downloadUrl: 'https://github.com/devlwte/kpm-studio/releases/download/v1.0.0/Krypton-Package-Manager-Setup-v1.0.0.zip',
+    downloadLabel: 'DESCARGAR SETUP (.ZIP)',
+    repoUrl: 'https://github.com/devlwte/kpm-studio',
+    metaInfo: 'Hash SHA-256 verificado · Compresión Brotli Ultra'
+  },
+  {
+    id: 'kyrnex',
+    tag: '02',
+    shortName: 'Kyrnex Platform',
+    title: 'Kyrnex Local Platform & Runtime',
+    badge: 'v1.0.0 Estable',
+    badgeColor: 'border-purple-500/30 bg-purple-950/40 text-purple-400',
+    category: 'Plataforma & Runtime Local de Microservicios',
+    system: 'Windows 10/11 & Linux · Binario Ligero Portable',
+    iconImg: '/projects/kyrnex.png',
+    iconScale: '',
+    glowClass: 'glow-purple',
+    themeBorder: 'border-purple-500/40',
+    btnBg: 'bg-purple-500 hover:bg-purple-400 text-zinc-950 shadow-purple-500/25',
+    accentText: 'text-purple-400',
+    description: 'Entorno de ejecución y gestor de microservicios locales para desarrolladores. Levanta servidores de desarrollo instantáneos, orquesta APIs REST y WebSockets con DynExpress Core, inspecciona puertos ocupados y monitoriza el consumo de recursos en tiempo real sin requerir contenedores pesados ni configuraciones tediosas.',
+    features: [
+      { label: 'DynExpress Core Server', iconName: 'Server', color: 'text-purple-400' },
+      { label: 'Cero Dependencias Externas', iconName: 'Zap', color: 'text-cyan-400' },
+      { label: 'Micro-Demonio Windows', iconName: 'Terminal', color: 'text-emerald-400' }
+    ],
+    downloadUrl: 'https://github.com/devlwte',
+    downloadLabel: 'DESCARGAR RUNTIME (.ZIP)',
+    repoUrl: 'https://github.com/devlwte',
+    metaInfo: 'Portabilidad total sin Docker · Cero telemetría'
+  },
+  {
+    id: 'playwarp',
+    tag: '03',
+    shortName: 'PlayWarp Hub',
+    title: 'PlayWarp Universal Launcher',
+    badge: 'v0.9.5 Alpha Preview',
+    badgeColor: 'border-amber-500/30 bg-amber-950/40 text-amber-400',
+    category: 'Lanzador Universal de Juegos Legales',
+    system: 'Windows & Steam Deck (Proton) · Catálogo Multi-Tienda',
+    iconImg: '/projects/playwarp.svg',
+    iconScale: '',
+    glowClass: 'glow-amber',
+    themeBorder: 'border-amber-500/40',
+    btnBg: 'bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-amber-500/25',
+    accentText: 'text-amber-400',
+    description: 'Lanzador universal de videojuegos y agregador de tiendas legales autorizado. Explora, organiza y adquiere juegos de distribuidores certificados desde un catálogo unificado de bajo consumo, con sincronización de accesos directos locales y optimización nativa para pantallas de mano como Steam Deck.',
+    features: [
+      { label: 'Agregador Multi-Tienda', iconName: 'ShoppingBag', color: 'text-amber-400' },
+      { label: 'Compatibilidad Steam Deck', iconName: 'Gamepad2', color: 'text-emerald-400' },
+      { label: 'Arquitectura 100% Legal', iconName: 'Shield', color: 'text-cyan-400' }
+    ],
+    downloadUrl: 'https://github.com/devlwte',
+    downloadLabel: 'DESCARGAR PREVIEW (.ZIP)',
+    repoUrl: 'https://github.com/devlwte',
+    metaInfo: 'Build de prueba Alpha · Soporte para mandos'
+  }
+];

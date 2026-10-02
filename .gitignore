@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.wrangler
+
+# Screenshots
+*.png
 
 # Editor directories and files
 .vscode/*

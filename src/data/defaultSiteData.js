@@ -1,0 +1,116 @@
+import { initialAvailableApps } from './defaultApps';
+
+export { initialAvailableApps };
+
+// Initial projects for the KyrnForge Ecosystem catalog
+export const initialProjects = [
+  {
+    id: 'kpm',
+    category: 'featured',
+    categoryLabel: 'Software de Empaquetado & Compresión',
+    title: 'Krypton Package Manager (KPM)',
+    version: 'v1.0.0 Oficial',
+    status: 'production',
+    statusLabel: 'Listo para Producción',
+    badgeColor: 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
+    iconImg: '/projects/kpm.png',
+    iconName: 'Package',
+    iconColor: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30',
+    description: 'Suite integral para crear instaladores y paquetes portables de Windows. Combina compresión Brotli Ultra (ahorro >99% en imágenes .ISO) con Deflate 9, Bóveda criptográfica militar AES-256-GCM, modo sigilo anónimo y extracción por streaming sin archivos temporales.',
+    tags: ['Bóveda AES-256-GCM', 'Compresión Brotli Ultra', 'Bytecode V8 Blindado', 'Windows 10/11'],
+    downloadUrl: 'https://github.com/devlwte/kpm-studio/releases/download/v1.0.0/Krypton-Package-Manager-Setup-v1.0.0.zip',
+    repoUrl: 'https://github.com/devlwte/kpm-studio',
+    isFlagship: true
+  },
+  {
+    id: 'playwarp',
+    category: 'gaming',
+    categoryLabel: 'Videojuegos & Plataforma',
+    title: 'PlayWarp Launcher',
+    version: 'v1.0 (En Desarrollo)',
+    status: 'dev',
+    statusLabel: 'En Desarrollo Activo',
+    badgeColor: 'border-amber-500/40 text-amber-400 bg-amber-950/30',
+    iconImg: '/projects/playwarp.svg',
+    iconName: 'Gamepad2',
+    iconColor: 'text-amber-400 bg-amber-950/40 border-amber-500/30',
+    description: 'Launcher de videojuegos universal y agregador de tiendas legales. Diseñado para explorar, comprar y descargar títulos de distribuidores autorizados en una sola interfaz ligera con catálogo multi-página, optimizado para PC y Steam Deck (100% legal y sin bloatware).',
+    tags: ['Game Launcher', 'Catálogo Multi-Tienda', '100% Legal', 'Soporte PC / Deck'],
+    repoUrl: null,
+    isFlagship: false
+  },
+  {
+    id: 'kyrnex',
+    category: 'tools',
+    categoryLabel: 'Plataforma & Runtime Local',
+    title: 'Kyrnex Platform',
+    version: 'v1.0.0 Estable',
+    status: 'production',
+    statusLabel: 'Producción Estable',
+    badgeColor: 'border-purple-500/40 text-purple-400 bg-purple-950/30',
+    iconImg: '/projects/kyrnex.png',
+    iconName: 'Server',
+    iconColor: 'text-purple-400 bg-purple-950/40 border-purple-500/30',
+    description: 'Plataforma integral de ejecución y gestión de aplicaciones web locales (Local Web Applications Runtime & Manager Platform). Permite levantar servidores locales instantáneos, orquestar microservicios con DynExpress y probar APIs directamente en Windows sin configuraciones engorrosas.',
+    tags: ['Local Web Runtime', 'DynExpress Core', 'Manager de Servidores', 'Cero Configuración'],
+    repoUrl: null,
+    isFlagship: false
+  },
+  {
+    id: '2dgo',
+    category: 'gaming',
+    categoryLabel: 'Motor de Videojuegos',
+    title: '2DGO Engine',
+    version: 'Core Architecture',
+    status: 'dev',
+    statusLabel: 'Arquitectura & Core',
+    badgeColor: 'border-cyan-500/40 text-cyan-400 bg-cyan-950/30',
+    iconImg: '/projects/2dgo.png',
+    iconName: 'Code2',
+    iconColor: 'text-cyan-400 bg-cyan-950/40 border-cyan-500/30',
+    description: 'Framework modular de alto rendimiento para renderizado 2D, físicas de plataformas ágiles y videojuegos retro-modernos. Diseñado para ofrecer máxima tasa de cuadros por segundo con un consumo ultra bajo de CPU y memoria en cualquier computadora.',
+    tags: ['2D Game Engine', 'Render Ultra-Fluido', 'Física de Plataformas', 'Bajo Consumo'],
+    repoUrl: null,
+    isFlagship: false
+  },
+  {
+    id: 'getgame',
+    category: 'tools',
+    categoryLabel: 'Herramienta de Distribución',
+    title: 'GetGame Utility',
+    version: 'Utility Tool',
+    status: 'planned',
+    statusLabel: 'Utilidad Nativa',
+    badgeColor: 'border-blue-500/40 text-blue-400 bg-blue-950/30',
+    iconImg: null,
+    iconName: 'Download',
+    iconColor: 'text-blue-400 bg-blue-950/40 border-blue-500/30',
+    description: 'Herramienta nativa de distribución rápida y verificación criptográfica de integridad para paquetes y assets de videojuegos. Opera sin servicios invasivos en segundo plano ni telemetría oculta.',
+    tags: ['Verificación de Integridad', 'Descarga Segura', 'Sin Telemetría Invasiva'],
+    repoUrl: null,
+    isFlagship: false
+  }
+];
+
+// Initial Site Settings (Hero, Metrics, Footer)
+export const initialSiteSettings = {
+  hero: {
+    tagline: 'FORJA INDEPENDIENTE DE SOFTWARE NATIVO & VIDEOJUEGOS',
+    title: 'Herramientas nativas, compresión extrema y experiencias de juego.',
+    description: 'Desarrollo independiente sin dependencias infladas. Enfocados en software de alto rendimiento para Windows, seguridad criptográfica Bóveda AES-256, lanzadores de juegos y entornos de ejecución web ligeros.',
+    buttonAppsText: 'APPS DISPONIBLES',
+    buttonProjectsText: 'CATÁLOGO DE PROYECTOS'
+  },
+  metrics: [
+    { label: 'LENGUAJES & RUNTIME', value: 'Nativo / Bytecode V8', color: 'text-zinc-200' },
+    { label: 'SEGURIDAD CRIPTO', value: 'Bóveda AES-256', color: 'text-cyan-400' },
+    { label: 'INFRAESTRUCTURA', value: 'Cloudflare Edge', color: 'text-emerald-400' },
+    { label: 'LICENCIAMIENTO', value: 'Freeware Legal', color: 'text-purple-400' }
+  ],
+  footer: {
+    brandSubtitle: 'Digital Engineering & Software Forge',
+    licenseUrl: 'https://github.com/devlwte/kpm-studio/blob/main/LICENSE',
+    githubUrl: 'https://github.com/devlwte',
+    year: '2026'
+  }
+};

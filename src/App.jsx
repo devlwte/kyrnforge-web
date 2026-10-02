@@ -299,11 +299,11 @@ export default function App() {
             <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between">
               <div className="space-y-4 max-w-2xl">
                 <div className="flex items-center space-x-3.5">
-                  <div className="w-14 h-14 rounded-2xl bg-[#0c0e17] border border-cyan-500/40 flex items-center justify-center p-2.5 shadow-lg shadow-cyan-500/10 flex-shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-[#0c0e17] border border-cyan-500/40 overflow-hidden flex items-center justify-center shadow-lg shadow-cyan-500/10 flex-shrink-0">
                     <img 
                       src="/projects/kpm.png" 
                       alt="KPM Studio Icon" 
-                      className="w-full h-full object-contain rounded-lg"
+                      className="w-full h-full object-cover scale-[1.12]"
                       onError={(e) => {
                         e.currentTarget.src = "/projects/default-app.svg";
                       }}
@@ -417,24 +417,23 @@ export default function App() {
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center space-x-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-[#0c0e17] border border-zinc-800 flex items-center justify-center p-2 flex-shrink-0 shadow-sm relative group-hover:border-zinc-700 transition">
+                        <div className="w-12 h-12 rounded-xl bg-[#0c0e17] border border-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm relative group-hover:border-zinc-700 transition">
                           {p.iconImg ? (
                             <img 
                               src={p.iconImg} 
                               alt={p.title} 
-                              className="w-full h-full object-contain rounded-md"
+                              className={`w-full h-full object-cover ${p.id === 'kpm' ? 'scale-[1.12]' : ''} ${p.id === '2dgo' ? '[image-rendering:pixelated]' : ''}`}
                               onError={(e) => {
                                 e.currentTarget.src = "/projects/default-app.svg";
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center relative" title="Icono por defecto (en diseño)">
-                              <img 
-                                src="/projects/default-app.svg" 
-                                alt="Default App Icon" 
-                                className="w-full h-full object-contain opacity-75" 
-                              />
-                            </div>
+                            <img 
+                              src="/projects/default-app.svg" 
+                              alt="Default App Icon" 
+                              className="w-full h-full object-cover opacity-85" 
+                              title="Icono por defecto (en diseño)"
+                            />
                           )}
                         </div>
                         <div>

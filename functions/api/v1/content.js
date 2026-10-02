@@ -39,7 +39,8 @@ export async function onRequestGet(context) {
 
       return new Response(JSON.stringify({
         source: "edge-static-json",
-        database: { connected: false, type: "none" },
+        database: { connected: !!kv, type: kv ? "Cloudflare KV" : "none" },
+        envKeys: Object.keys(env || {}),
         availableApps: resApps,
         projects: resProjects,
         siteSettings: resSettings

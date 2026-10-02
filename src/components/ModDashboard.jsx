@@ -37,7 +37,8 @@ import {
   Globe2,
   Save,
   LayoutGrid,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import { initialAvailableApps } from '../data/defaultApps';
 import { initialProjects, initialSiteSettings } from '../data/defaultSiteData';
@@ -93,6 +94,38 @@ const PRESET_ICONS = [
   { name: '2DGO Engine', path: '/projects/2dgo.png' },
   { name: 'Icono por Defecto (SVG)', path: '/projects/default-app.svg' },
   { name: 'Logo KyrnForge', path: '/logo.svg' }
+];
+
+const AVAILABLE_FEATURE_ICONS = [
+  'Shield', 'Layers', 'Cpu', 'Server', 'Zap', 'Terminal', 
+  'Gamepad2', 'ShoppingBag', 'Code2', 'Package', 'Sparkles', 
+  'Download', 'Key', 'Globe2', 'Activity'
+];
+
+const AVAILABLE_FEATURE_COLORS = [
+  { label: 'Cyan (#06b6d4)', value: 'text-cyan-400' },
+  { label: 'Esmeralda (#10b981)', value: 'text-emerald-400' },
+  { label: 'Púrpura (#a855f7)', value: 'text-purple-400' },
+  { label: 'Ámbar (#f59e0b)', value: 'text-amber-400' },
+  { label: 'Azul (#3b82f6)', value: 'text-blue-400' },
+  { label: 'Rosa (#f43f5e)', value: 'text-rose-400' },
+  { label: 'Blanco (#e4e4e7)', value: 'text-zinc-200' }
+];
+
+const BADGE_COLOR_PRESETS = [
+  { label: 'Esmeralda Oficial', value: 'border-emerald-500/30 bg-emerald-950/40 text-emerald-400' },
+  { label: 'Cyan Novedad', value: 'border-cyan-500/30 bg-cyan-950/40 text-cyan-400' },
+  { label: 'Púrpura Estable', value: 'border-purple-500/30 bg-purple-950/40 text-purple-400' },
+  { label: 'Ámbar Alpha/Beta', value: 'border-amber-500/30 bg-amber-950/40 text-amber-400' },
+  { label: 'Azul Utilidad', value: 'border-blue-500/30 bg-blue-950/40 text-blue-400' },
+  { label: 'Rosa Experimental', value: 'border-rose-500/30 bg-rose-950/40 text-rose-400' }
+];
+
+const ICON_SCALE_PRESETS = [
+  { label: 'Normal (100%)', value: '' },
+  { label: 'Zoom Ligero (112%)', value: 'scale-[1.12]' },
+  { label: 'Zoom Medio (120%)', value: 'scale-[1.20]' },
+  { label: 'Zoom Amplio (125%)', value: 'scale-[1.25]' }
 ];
 
 export default function ModDashboard({ onNavigateHome }) {
@@ -201,6 +234,11 @@ export default function ModDashboard({ onNavigateHome }) {
   // Modals & UI helpers
   const [editingApp, setEditingApp] = useState(null);
   const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+  const [appModalTab, setAppModalTab] = useState('form'); // 'form' | 'json'
+  const [appRawJsonText, setAppRawJsonText] = useState('');
+  const [appRawJsonError, setAppRawJsonError] = useState('');
+  const appsFileInputRef = React.useRef(null);
+
   const [editingProject, setEditingProject] = useState(null);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   
@@ -212,6 +250,98 @@ export default function ModDashboard({ onNavigateHome }) {
   const [importError, setImportError] = useState('');
   const [copiedExport, setCopiedExport] = useState(false);
   const [saveSuccessToast, setSaveSuccessToast] = useState('');
+  const [ghToken, setGhToken] = useState(() => {
+    try {
+      return localStorage.getItem('kyrnforge_gh_token') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isSyncingGh, setIsSyncingGh] = useState(false);
+
+  const syncAppsToGitHub = async () => {
+    let token = ghToken;
+    if (!token) {
+      const promptVal = prompt('Para sincronizar directamente a la nube desde este navegador (móvil o PC), introduce un GitHub Personal Access Token con permiso "repo":');
+      if (!promptVal) return;
+      token = promptVal.trim();
+      setGhToken(token);
+      localStorage.setItem('kyrnforge_gh_token', token);
+    }
+
+    setIsSyncingGh(true);
+    try {
+      // 1. Get current SHA of public/data/apps.json
+      const getFileRes = await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/public/data/apps.json', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (!getFileRes.ok) {
+        throw new Error('No se pudo acceder al repositorio de GitHub con ese token. Verifica los permisos.');
+      }
+      const fileData = await getFileRes.json();
+      const currentSha = fileData.sha;
+
+      // 2. Commit updated apps.json
+      const jsonString = JSON.stringify(apps, null, 2);
+      const contentBase64 = btoa(unescape(encodeURIComponent(jsonString)));
+
+      const updateRes = await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/public/data/apps.json', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify({
+          message: 'feat: actualizar apps.json desde panel /mod',
+          content: contentBase64,
+          sha: currentSha
+        })
+      });
+
+      if (updateRes.ok) {
+        // Also attempt to sync src/data/apps.json so repo stays completely unified
+        try {
+          const getSrcRes = await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/src/data/apps.json', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
+          if (getSrcRes.ok) {
+            const srcData = await getSrcRes.json();
+            await fetch('https://api.github.com/repos/devlwte/kyrnforge-web/contents/src/data/apps.json', {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
+              },
+              body: JSON.stringify({
+                message: 'feat: sincronizar src/data/apps.json desde panel /mod',
+                content: contentBase64,
+                sha: srcData.sha
+              })
+            });
+          }
+        } catch {
+          // public/data/apps.json is the primary static asset served
+        }
+
+        showToast('✓ ¡Sincronizado con GitHub! Cloudflare Pages desplegará los cambios en ~25 segundos para todos.');
+      } else {
+        const errData = await updateRes.json().catch(() => ({}));
+        alert('Error al sincronizar con GitHub: ' + (errData.message || 'Error desconocido'));
+      }
+    } catch (err) {
+      alert('Error de sincronización con GitHub: ' + err.message);
+    } finally {
+      setIsSyncingGh(false);
+    }
+  };
 
   // Persist Apps to both Backend API and localStorage
   const saveApps = async (newApps) => {
@@ -327,9 +457,10 @@ export default function ModDashboard({ onNavigateHome }) {
   };
 
   // --- APP CRUD OPERATIONS ---
+  // --- APP CRUD OPERATIONS ---
   const handleOpenAddApp = () => {
     const nextTag = String(apps.length + 1).padStart(2, '0');
-    setEditingApp({
+    const newApp = {
       id: `app-${Date.now().toString(36)}`,
       tag: nextTag,
       shortName: 'Nueva App',
@@ -354,25 +485,130 @@ export default function ModDashboard({ onNavigateHome }) {
       downloadLabel: 'DESCARGAR SETUP (.ZIP)',
       repoUrl: 'https://github.com/devlwte',
       metaInfo: 'Verificación SHA-256 · Freeware Legal'
-    });
+    };
+    setEditingApp(newApp);
+    setAppRawJsonText(JSON.stringify(newApp, null, 2));
+    setAppRawJsonError('');
+    setAppModalTab('form');
     setIsAppModalOpen(true);
   };
 
   const handleOpenEditApp = (app) => {
-    setEditingApp(JSON.parse(JSON.stringify(app)));
+    const clone = JSON.parse(JSON.stringify(app));
+    if (!Array.isArray(clone.features)) clone.features = [];
+    setEditingApp(clone);
+    setAppRawJsonText(JSON.stringify(clone, null, 2));
+    setAppRawJsonError('');
+    setAppModalTab('form');
     setIsAppModalOpen(true);
+  };
+
+  const handleDuplicateApp = (app) => {
+    const clone = JSON.parse(JSON.stringify(app));
+    clone.id = `${app.id}-copia-${Date.now().toString(36).slice(-4)}`;
+    clone.shortName = `${app.shortName} (Copia)`;
+    clone.title = `${app.title} (Copia)`;
+    const updated = [...apps, clone].map((a, i) => ({
+      ...a,
+      tag: String(i + 1).padStart(2, '0')
+    }));
+    saveApps(updated);
+    showToast(`✓ Aplicación "${app.shortName}" duplicada`);
+  };
+
+  const handleAddFeature = () => {
+    if (!editingApp) return;
+    const currentFeatures = Array.isArray(editingApp.features) ? editingApp.features : [];
+    const updatedFeatures = [
+      ...currentFeatures,
+      { label: 'Nueva Característica', iconName: 'Zap', color: 'text-cyan-400' }
+    ];
+    const updatedApp = { ...editingApp, features: updatedFeatures };
+    setEditingApp(updatedApp);
+    setAppRawJsonText(JSON.stringify(updatedApp, null, 2));
+  };
+
+  const handleUpdateFeature = (index, field, value) => {
+    if (!editingApp || !Array.isArray(editingApp.features)) return;
+    const updated = [...editingApp.features];
+    updated[index] = { ...updated[index], [field]: value };
+    const updatedApp = { ...editingApp, features: updated };
+    setEditingApp(updatedApp);
+    setAppRawJsonText(JSON.stringify(updatedApp, null, 2));
+  };
+
+  const handleRemoveFeature = (index) => {
+    if (!editingApp || !Array.isArray(editingApp.features)) return;
+    const updated = editingApp.features.filter((_, i) => i !== index);
+    const updatedApp = { ...editingApp, features: updated };
+    setEditingApp(updatedApp);
+    setAppRawJsonText(JSON.stringify(updatedApp, null, 2));
+  };
+
+  const handleDownloadAppsJson = () => {
+    const blob = new Blob([JSON.stringify(apps, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'apps.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✓ Archivo apps.json descargado a tu equipo');
+  };
+
+  const handleUploadAppsJson = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const reindexed = parsed.map((a, i) => ({
+            ...a,
+            tag: String(i + 1).padStart(2, '0')
+          }));
+          saveApps(reindexed);
+          showToast(`✓ Archivo ${file.name} importado: ${reindexed.length} apps cargadas`);
+        } else {
+          alert('El archivo JSON debe contener un arreglo de aplicaciones.');
+        }
+      } catch (err) {
+        alert('Error al leer el archivo JSON: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    if (e.target) e.target.value = '';
   };
 
   const handleSaveAppForm = (e) => {
     e.preventDefault();
-    if (!editingApp.id || !editingApp.title) return;
+    let appToSave = editingApp;
 
-    const exists = apps.some(a => a.id === editingApp.id);
+    if (appModalTab === 'json') {
+      try {
+        const parsed = JSON.parse(appRawJsonText);
+        if (!parsed.id || !parsed.title) {
+          setAppRawJsonError('El JSON debe contener al menos los campos "id" y "title".');
+          return;
+        }
+        appToSave = parsed;
+      } catch (err) {
+        setAppRawJsonError(`Error de sintaxis JSON: ${err.message}`);
+        return;
+      }
+    }
+
+    if (!appToSave.id || !appToSave.title) return;
+
+    const exists = apps.some(a => a.id === appToSave.id);
     let updated;
     if (exists) {
-      updated = apps.map(a => a.id === editingApp.id ? editingApp : a);
+      updated = apps.map(a => a.id === appToSave.id ? appToSave : a);
     } else {
-      updated = [...apps, editingApp];
+      updated = [...apps, appToSave];
     }
     // Re-index tags
     updated = updated.map((a, i) => ({
@@ -799,6 +1035,14 @@ export default function ModDashboard({ onNavigateHome }) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="file"
+                  ref={appsFileInputRef}
+                  onChange={handleUploadAppsJson}
+                  accept=".json"
+                  className="hidden"
+                />
+
                 <button
                   onClick={handleOpenAddApp}
                   className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-cyan-500/20 active:scale-95"
@@ -806,12 +1050,45 @@ export default function ModDashboard({ onNavigateHome }) {
                   <Plus className="w-4 h-4" />
                   <span>NUEVA APP</span>
                 </button>
+
+                <button
+                  onClick={syncAppsToGitHub}
+                  disabled={isSyncingGh}
+                  title="Sincronizar cambios directamente en GitHub para que se apliquen en todos los dispositivos y móviles"
+                  className={`px-3 py-2 rounded-lg border text-xs font-mono transition flex items-center space-x-1.5 ${
+                    isSyncingGh 
+                      ? 'bg-zinc-800 text-zinc-400 border-zinc-700 cursor-wait' 
+                      : 'bg-emerald-950/40 hover:bg-emerald-900/60 border-emerald-500/40 text-emerald-400 hover:text-emerald-300 shadow-lg shadow-emerald-950/50 active:scale-95'
+                  }`}
+                >
+                  <Globe2 className={`w-3.5 h-3.5 ${isSyncingGh ? 'animate-spin' : ''}`} />
+                  <span>{isSyncingGh ? 'Publicando...' : 'Publicar a la Nube'}</span>
+                </button>
+
+                <button
+                  onClick={handleDownloadAppsJson}
+                  title="Descargar el archivo apps.json a tu equipo"
+                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition flex items-center space-x-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Descargar apps.json</span>
+                </button>
+
+                <button
+                  onClick={() => appsFileInputRef.current?.click()}
+                  title="Cargar un archivo apps.json desde tu computadora"
+                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-purple-400 hover:text-purple-300 transition flex items-center space-x-1.5"
+                >
+                  <FileUp className="w-3.5 h-3.5" />
+                  <span>Importar apps.json</span>
+                </button>
+
                 <button
                   onClick={() => openExportModal('apps')}
                   className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center space-x-1.5"
                 >
                   <FileDown className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Exportar Apps</span>
+                  <span>Ver JSON</span>
                 </button>
               </div>
             </div>
@@ -871,6 +1148,14 @@ export default function ModDashboard({ onNavigateHome }) {
                   </div>
 
                   <div className="flex items-center space-x-2 self-end md:self-center">
+                    <button
+                      onClick={() => handleDuplicateApp(app)}
+                      className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-400 hover:text-zinc-200 transition flex items-center space-x-1.5"
+                      title="Duplicar esta aplicación como plantilla"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>Clonar</span>
+                    </button>
                     <button
                       onClick={() => handleOpenEditApp(app)}
                       className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition flex items-center space-x-1.5"
@@ -1311,202 +1596,375 @@ export default function ModDashboard({ onNavigateHome }) {
       </main>
 
       {/* ========================================================================= */}
-      {/* MODAL: ADD / EDIT APP                                                     */}
+      {/* MODAL: ADD / EDIT APP (TOTAL CONTROL: FORM & RAW JSON)                    */}
       {/* ========================================================================= */}
       {isAppModalOpen && editingApp && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#0c0e17] border border-zinc-800 rounded-2xl w-full max-w-2xl p-6 space-y-5 my-8 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <div className="bg-[#0c0e17] border border-zinc-800 rounded-2xl w-full max-w-3xl p-6 space-y-5 my-8 shadow-2xl relative">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800 pb-3 gap-3">
               <div className="flex items-center space-x-2">
                 <Download className="w-5 h-5 text-cyan-400" />
                 <h3 className="text-lg font-bold text-zinc-100">
                   {apps.some(a => a.id === editingApp.id) ? 'Editar Aplicación del Carrusel' : 'Agregar Nueva Aplicación al Carrusel'}
                 </h3>
               </div>
-              <button
-                onClick={() => setIsAppModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-100 font-mono text-sm"
-              >
-                ✕
-              </button>
+
+              {/* Mode Switcher: Visual Form vs Raw JSON */}
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 bg-[#050608] p-1 rounded-lg border border-zinc-800 text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (appModalTab === 'json') {
+                        try {
+                          const parsed = JSON.parse(appRawJsonText);
+                          setEditingApp(parsed);
+                          setAppRawJsonError('');
+                        } catch (err) {
+                          setAppRawJsonError('JSON inválido. Corrige la sintaxis antes de volver al formulario visual.');
+                          return;
+                        }
+                      }
+                      setAppModalTab('form');
+                    }}
+                    className={`px-3 py-1 rounded transition ${appModalTab === 'form' ? 'bg-cyan-500 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+                  >
+                    Formulario Detallado
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppRawJsonText(JSON.stringify(editingApp, null, 2));
+                      setAppRawJsonError('');
+                      setAppModalTab('json');
+                    }}
+                    className={`px-3 py-1 rounded transition flex items-center space-x-1 ${appModalTab === 'json' ? 'bg-cyan-500 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>Editor JSON Directo</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setIsAppModalOpen(false)}
+                  className="text-zinc-400 hover:text-zinc-100 font-mono text-sm p-1"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSaveAppForm} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">ID Único (slug)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingApp.id}
-                    onChange={(e) => setEditingApp({ ...editingApp, id: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+              {appModalTab === 'json' ? (
+                /* RAW JSON MODE: 100% UNRESTRICTED CONTROL */
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-xl bg-[#080b14] border border-cyan-500/30 text-xs font-mono text-cyan-300">
+                    <div className="font-bold flex items-center space-x-1.5 pb-1">
+                      <Code2 className="w-4 h-4 text-cyan-400" />
+                      <span>CONTROL TOTAL DEL OBJETO JSON</span>
+                    </div>
+                    <p className="text-zinc-400 text-[11px] leading-relaxed">
+                      Aquí puedes modificar directamente cualquier propiedad de la app, añadir nuevos campos o cambiar valores libremente. Al guardar se validará la sintaxis JSON.
+                    </p>
+                  </div>
+
+                  {appRawJsonError && (
+                    <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-xs font-mono text-rose-300">
+                      ⚠️ {appRawJsonError}
+                    </div>
+                  )}
+
+                  <textarea
+                    rows={18}
+                    value={appRawJsonText}
+                    onChange={(e) => {
+                      setAppRawJsonText(e.target.value);
+                      setAppRawJsonError('');
+                    }}
+                    className="w-full bg-[#050608] border border-zinc-800 rounded-xl p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-cyan-500/50"
+                    spellCheck={false}
                   />
                 </div>
+              ) : (
+                /* VISUAL DETAILED FORM MODE */
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">ID Único (slug de la app)</label>
+                      <input
+                        type="text"
+                        required
+                        value={editingApp.id}
+                        onChange={(e) => setEditingApp({ ...editingApp, id: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Nombre Corto (Pestaña carrusel)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingApp.shortName}
-                    onChange={(e) => setEditingApp({ ...editingApp, shortName: e.target.value })}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
-              </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Nombre Corto (pestaña carrusel)</label>
+                      <input
+                        type="text"
+                        required
+                        value={editingApp.shortName}
+                        onChange={(e) => setEditingApp({ ...editingApp, shortName: e.target.value })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-mono text-zinc-400">Título Completo</label>
-                <input
-                  type="text"
-                  required
-                  value={editingApp.title}
-                  onChange={(e) => setEditingApp({ ...editingApp, title: e.target.value })}
-                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                />
-              </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-mono text-zinc-400">Título Completo Principal</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingApp.title}
+                      onChange={(e) => setEditingApp({ ...editingApp, title: e.target.value })}
+                      className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Badge / Versión</label>
-                  <input
-                    type="text"
-                    value={editingApp.badge}
-                    onChange={(e) => setEditingApp({ ...editingApp, badge: e.target.value })}
-                    placeholder="v1.0.0 Oficial"
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Badge / Versión</label>
+                      <input
+                        type="text"
+                        value={editingApp.badge}
+                        onChange={(e) => setEditingApp({ ...editingApp, badge: e.target.value })}
+                        placeholder="v1.0.0 Oficial"
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Categoría</label>
-                  <input
-                    type="text"
-                    value={editingApp.category}
-                    onChange={(e) => setEditingApp({ ...editingApp, category: e.target.value })}
-                    placeholder="Software de Empaquetado & Compresión"
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
-              </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Estilo de Color del Badge</label>
+                      <select
+                        value={editingApp.badgeColor || ''}
+                        onChange={(e) => setEditingApp({ ...editingApp, badgeColor: e.target.value })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      >
+                        {BADGE_COLOR_PRESETS.map((b, idx) => (
+                          <option key={idx} value={b.value}>{b.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-mono text-zinc-400">Compatibilidad / Sistema</label>
-                <input
-                  type="text"
-                  value={editingApp.system}
-                  onChange={(e) => setEditingApp({ ...editingApp, system: e.target.value })}
-                  placeholder="Windows 10 & 11 (64-bit) · Instalador Setup Oficial y Modo Portable"
-                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                />
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Categoría</label>
+                      <input
+                        type="text"
+                        value={editingApp.category}
+                        onChange={(e) => setEditingApp({ ...editingApp, category: e.target.value })}
+                        placeholder="Software de Empaquetado & Compresión"
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
 
-              {/* Icon Selector */}
-              <div className="space-y-2 p-3 rounded-lg bg-[#07090e] border border-zinc-800/80">
-                <label className="text-xs font-mono text-zinc-300 block">Ruta del Icono (100% x 100%)</label>
-                <input
-                  type="text"
-                  value={editingApp.iconImg}
-                  onChange={(e) => setEditingApp({ ...editingApp, iconImg: e.target.value })}
-                  placeholder="/projects/kpm.png o URL"
-                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                />
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-mono text-zinc-500">Presets rápidos:</span>
-                  {PRESET_ICONS.map((p, idx) => (
-                    <button
-                      type="button"
-                      key={idx}
-                      onClick={() => setEditingApp({ ...editingApp, iconImg: p.path })}
-                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300"
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Compatibilidad / Sistema</label>
+                      <input
+                        type="text"
+                        value={editingApp.system}
+                        onChange={(e) => setEditingApp({ ...editingApp, system: e.target.value })}
+                        placeholder="Windows 10 & 11 (64-bit) · Instalador Setup Oficial y Modo Portable"
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
+                  </div>
 
-              {/* Theme Selector */}
-              <div className="space-y-2 p-3 rounded-lg bg-[#07090e] border border-zinc-800/80">
-                <label className="text-xs font-mono text-zinc-300 block">Tema Visual & Color de Resplandor</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {GLOW_THEMES.map((theme) => (
-                    <button
-                      type="button"
-                      key={theme.id}
-                      onClick={() => setEditingApp({
-                        ...editingApp,
-                        glowClass: theme.id,
-                        themeBorder: theme.border,
-                        btnBg: theme.btn,
-                        accentText: theme.accent,
-                        badgeColor: theme.badge
-                      })}
-                      className={`p-2 rounded-lg border text-xs font-mono text-left transition flex items-center space-x-2 ${
-                        editingApp.glowClass === theme.id ? `${theme.border} bg-zinc-900 text-zinc-100 font-bold` : 'border-zinc-900 bg-[#050608] text-zinc-400'
-                      }`}
-                    >
-                      <span className={`w-2.5 h-2.5 rounded-full ${theme.accent.replace('text-', 'bg-')}`} />
-                      <span>{theme.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                  {/* Icon Selector & Scale */}
+                  <div className="space-y-3 p-3 rounded-lg bg-[#07090e] border border-zinc-800/80">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <label className="text-xs font-mono text-zinc-300 block">Ruta del Icono</label>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[11px] font-mono text-zinc-500">Escala:</span>
+                        <select
+                          value={editingApp.iconScale || ''}
+                          onChange={(e) => setEditingApp({ ...editingApp, iconScale: e.target.value })}
+                          className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                        >
+                          {ICON_SCALE_PRESETS.map((s, idx) => (
+                            <option key={idx} value={s.value}>{s.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={editingApp.iconImg}
+                      onChange={(e) => setEditingApp({ ...editingApp, iconImg: e.target.value })}
+                      placeholder="/projects/kpm.png o URL"
+                      className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                    />
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] font-mono text-zinc-500">Presets rápidos:</span>
+                      {PRESET_ICONS.map((p, idx) => (
+                        <button
+                          type="button"
+                          key={idx}
+                          onClick={() => setEditingApp({ ...editingApp, iconImg: p.path })}
+                          className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300"
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-mono text-zinc-400">Descripción</label>
-                <textarea
-                  rows={3}
-                  value={editingApp.description}
-                  onChange={(e) => setEditingApp({ ...editingApp, description: e.target.value })}
-                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 leading-relaxed"
-                />
-              </div>
+                  {/* Theme Selector */}
+                  <div className="space-y-2 p-3 rounded-lg bg-[#07090e] border border-zinc-800/80">
+                    <label className="text-xs font-mono text-zinc-300 block">Tema Visual & Color de Resplandor</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {GLOW_THEMES.map((theme) => (
+                        <button
+                          type="button"
+                          key={theme.id}
+                          onClick={() => setEditingApp({
+                            ...editingApp,
+                            glowClass: theme.id,
+                            themeBorder: theme.border,
+                            btnBg: theme.btn,
+                            accentText: theme.accent,
+                            badgeColor: theme.badge
+                          })}
+                          className={`p-2 rounded-lg border text-xs font-mono text-left transition flex items-center space-x-2 ${
+                            editingApp.glowClass === theme.id ? `${theme.border} bg-zinc-900 text-zinc-100 font-bold` : 'border-zinc-900 bg-[#050608] text-zinc-400'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${theme.accent.replace('text-', 'bg-')}`} />
+                          <span>{theme.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Enlace de Descarga</label>
-                  <input
-                    type="text"
-                    value={editingApp.downloadUrl}
-                    onChange={(e) => setEditingApp({ ...editingApp, downloadUrl: e.target.value })}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
+                  {/* Description */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-mono text-zinc-400">Descripción Detallada</label>
+                    <textarea
+                      rows={3}
+                      value={editingApp.description}
+                      onChange={(e) => setEditingApp({ ...editingApp, description: e.target.value })}
+                      className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 leading-relaxed"
+                    />
+                  </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Texto del Botón Descarga</label>
-                  <input
-                    type="text"
-                    value={editingApp.downloadLabel}
-                    onChange={(e) => setEditingApp({ ...editingApp, downloadLabel: e.target.value })}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
-              </div>
+                  {/* Features & Tags Manager */}
+                  <div className="space-y-3 p-3.5 rounded-xl bg-[#07090e] border border-zinc-800/80">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-xs font-mono font-bold text-zinc-200 block">
+                          Características / Tags Técnicos de la App
+                        </label>
+                        <span className="text-[11px] font-mono text-zinc-500">
+                          Badges inferiores que destacan cifrado, motores, compresión, etc.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddFeature}
+                        className="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-mono text-cyan-300 flex items-center space-x-1 active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>+ Tag</span>
+                      </button>
+                    </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Enlace GitHub</label>
-                  <input
-                    type="text"
-                    value={editingApp.repoUrl}
-                    onChange={(e) => setEditingApp({ ...editingApp, repoUrl: e.target.value })}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      {(!editingApp.features || editingApp.features.length === 0) && (
+                        <div className="text-xs font-mono text-zinc-500 p-2 border border-dashed border-zinc-800 rounded-lg text-center">
+                          No hay características añadidas. Haz clic en "+ Tag" para añadir una.
+                        </div>
+                      )}
+                      {editingApp.features && editingApp.features.map((feat, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-[#050608] border border-zinc-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <input
+                            type="text"
+                            value={feat.label}
+                            onChange={(e) => handleUpdateFeature(idx, 'label', e.target.value)}
+                            placeholder="Ej: Cifrado Bóveda AES-256"
+                            className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded px-2.5 py-1 text-xs font-mono text-zinc-200"
+                          />
+                          <div className="flex items-center space-x-1.5">
+                            <select
+                              value={feat.iconName || 'Zap'}
+                              onChange={(e) => handleUpdateFeature(idx, 'iconName', e.target.value)}
+                              className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                            >
+                              {AVAILABLE_FEATURE_ICONS.map(icon => (
+                                <option key={icon} value={icon}>{icon}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={feat.color || 'text-cyan-400'}
+                              onChange={(e) => handleUpdateFeature(idx, 'color', e.target.value)}
+                              className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                            >
+                              {AVAILABLE_FEATURE_COLORS.map(col => (
+                                <option key={col.value} value={col.value}>{col.label}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFeature(idx)}
+                              className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 transition"
+                              title="Eliminar este tag"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-zinc-400">Nota al Pie (Meta)</label>
-                  <input
-                    type="text"
-                    value={editingApp.metaInfo}
-                    onChange={(e) => setEditingApp({ ...editingApp, metaInfo: e.target.value })}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                  />
-                </div>
-              </div>
+                  {/* Download Action Box Fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Enlace de Descarga</label>
+                      <input
+                        type="text"
+                        value={editingApp.downloadUrl}
+                        onChange={(e) => setEditingApp({ ...editingApp, downloadUrl: e.target.value })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Texto del Botón Descarga</label>
+                      <input
+                        type="text"
+                        value={editingApp.downloadLabel}
+                        onChange={(e) => setEditingApp({ ...editingApp, downloadLabel: e.target.value })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Enlace Repositorio GitHub</label>
+                      <input
+                        type="text"
+                        value={editingApp.repoUrl}
+                        onChange={(e) => setEditingApp({ ...editingApp, repoUrl: e.target.value })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-mono text-zinc-400">Nota al Pie (Meta Info)</label>
+                      <input
+                        type="text"
+                        value={editingApp.metaInfo}
+                        onChange={(e) => setEditingApp({ ...editingApp, metaInfo: e.target.value })}
+                        className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
                 <button
@@ -1518,9 +1976,10 @@ export default function ModDashboard({ onNavigateHome }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition shadow-lg shadow-cyan-500/20"
+                  className="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition shadow-lg shadow-cyan-500/20 active:scale-95 flex items-center space-x-1.5"
                 >
-                  Guardar Aplicación
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Guardar Aplicación</span>
                 </button>
               </div>
             </form>

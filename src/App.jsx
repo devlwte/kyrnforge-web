@@ -247,9 +247,11 @@ export default function App() {
     <div className="min-h-screen bg-[#06070a] text-zinc-100 font-sans bg-tech-grid relative overflow-x-hidden selection:bg-cyan-500/20 selection:text-cyan-300">
       
       {/* Ambient Lighting Accents */}
-      <div className="fixed top-[-150px] left-[15%] w-[600px] h-[500px] bg-cyan-950/20 blur-[150px] rounded-full pointer-events-none -z-10" />
-      <div className="fixed top-[40%] right-[-100px] w-[500px] h-[500px] bg-emerald-950/15 blur-[160px] rounded-full pointer-events-none -z-10" />
-      <div className="fixed bottom-[-100px] left-[10%] w-[500px] h-[500px] bg-purple-950/15 blur-[160px] rounded-full pointer-events-none -z-10" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[-150px] left-[15%] w-[600px] h-[500px] bg-cyan-950/20 blur-[150px] rounded-full" />
+        <div className="absolute top-[40%] -right-24 w-[500px] h-[500px] bg-emerald-950/15 blur-[160px] rounded-full" />
+        <div className="absolute bottom-[-100px] left-[10%] w-[500px] h-[500px] bg-purple-950/15 blur-[160px] rounded-full" />
+      </div>
 
       {/* Top Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#06070a]/90 border-b border-zinc-900/80 w-full">

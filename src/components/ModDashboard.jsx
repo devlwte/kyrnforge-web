@@ -331,7 +331,7 @@ export default function ModDashboard({ onNavigateHome }) {
     }
 
     try {
-      const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
       const res = await fetch('/api/v1/apps', {
         method: 'POST',
         headers: {
@@ -368,7 +368,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(newProjects, null, 2));
 
     try {
-      const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -398,7 +398,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(newSettings, null, 2));
 
     try {
-      const auth = passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -428,20 +428,48 @@ export default function ModDashboard({ onNavigateHome }) {
   };
 
   // Auth Handlers
-  const handleLogin = (e) => {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (passwordInput === DEFAULT_PASS || passwordInput === 'admin') {
-      setIsAuthenticated(true);
-      setAuthError(false);
-      localStorage.setItem(AUTH_KEY, 'true');
-    } else {
-      setAuthError(true);
+    const enteredPass = passwordInput.trim();
+    if (!enteredPass) return;
+    setIsLoggingIn(true);
+
+    try {
+      const res = await fetch('/api/v1/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: enteredPass })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setAuthError(false);
+        localStorage.setItem(AUTH_KEY, 'true');
+        localStorage.setItem('kyrnforge_auth_token', enteredPass);
+        setIsLoggingIn(false);
+        return;
+      }
+    } catch {
+      // Local fallback for offline/development
+      if (enteredPass === DEFAULT_PASS) {
+        setIsAuthenticated(true);
+        setAuthError(false);
+        localStorage.setItem(AUTH_KEY, 'true');
+        localStorage.setItem('kyrnforge_auth_token', enteredPass);
+        setIsLoggingIn(false);
+        return;
+      }
     }
+    setIsLoggingIn(false);
+    setAuthError(true);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem('kyrnforge_auth_token');
     setPasswordInput('');
   };
 
@@ -867,17 +895,18 @@ export default function ModDashboard({ onNavigateHome }) {
               {authError && (
                 <div className="text-xs font-mono text-rose-400 pt-1 flex items-center space-x-1">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>Contraseña incorrecta. Intenta con <code className="text-zinc-200">kyrnforge2026</code> o <code className="text-zinc-200">admin</code>.</span>
+                  <span>Contraseña incorrecta. Revisa tu contraseña de administrador o usa la clave predeterminada.</span>
                 </div>
               )}
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 active:scale-95"
+              disabled={isLoggingIn}
+              className={`w-full py-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-cyan-500/20 active:scale-95 ${isLoggingIn ? 'opacity-70 cursor-wait' : ''}`}
             >
-              <Unlock className="w-4 h-4" />
-              <span>INGRESAR AL PANEL</span>
+              <Unlock className={`w-4 h-4 ${isLoggingIn ? 'animate-spin' : ''}`} />
+              <span>{isLoggingIn ? 'VERIFICANDO CREDENCIALES...' : 'INGRESAR AL PANEL'}</span>
             </button>
           </form>
 

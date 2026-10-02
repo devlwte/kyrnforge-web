@@ -1,33 +1,53 @@
+// Cloudflare Pages Function: /api/v1/auth
+// Validates admin password against Cloudflare Environment Secrets (ADMIN_PASSWORD / ADMIN_KEY)
+
 export async function onRequestPost(context) {
   try {
-    const body = await context.request.json().catch(() => ({}));
-    const { apiKey, clientApp } = body;
+    const { request, env } = context;
+    const body = await request.json().catch(() => ({}));
+    const provided = (body.password || "").trim();
+    const expected = env?.ADMIN_KEY || env?.MOD_PASSWORD || env?.ADMIN_PASSWORD || "kyrnforge2026";
 
-    if (!apiKey) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "Missing API Key parameter."
+    if (provided && provided === expected) {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Autenticado correctamente." 
       }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        status: 200,
+        headers: { 
+          "Content-Type": "application/json", 
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "no-store, no-cache, must-revalidate"
+        }
       });
     }
 
-    // Demo/Initial Gateway Validation
-    return new Response(JSON.stringify({
-      success: true,
-      authenticated: true,
-      app: clientApp || "GenericClient",
-      sessionToken: "kf_live_" + Math.random().toString(36).substring(2, 15),
-      expiresInSeconds: 86400,
-      timestamp: new Date().toISOString()
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: "Contraseña incorrecta." 
     }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      status: 401,
+      headers: { 
+        "Content-Type": "application/json", 
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-store, no-cache, must-revalidate"
+      }
     });
   } catch (err) {
     return new Response(JSON.stringify({ success: false, error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   }
+}
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    }
+  });
 }

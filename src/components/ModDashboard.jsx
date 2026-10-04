@@ -1095,53 +1095,53 @@ export default function ModDashboard({ onNavigateHome }) {
 
         {/* Tab Navigation Navigation Bar */}
         <div className="border-t border-zinc-900/80 bg-[#07090e]/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center overflow-x-auto space-x-2 py-2 text-xs font-mono">
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 flex items-center overflow-x-auto no-scrollbar space-x-2 py-2 text-xs font-mono">
             <button
               onClick={() => setActiveTab('apps')}
-              className={`px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap ${
+              className={`px-3 sm:px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'apps'
                   ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 border border-transparent'
               }`}
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>1. Carrusel Descargas ({apps.length})</span>
+              <Download className="w-3.5 h-3.5 flex-shrink-0" />
+              <span><span className="hidden sm:inline">1. Carrusel Descargas</span><span className="sm:hidden">1. Apps</span> ({apps.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('projects')}
-              className={`px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap ${
+              className={`px-3 sm:px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'projects'
                   ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 font-bold'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 border border-transparent'
               }`}
             >
-              <Gamepad2 className="w-3.5 h-3.5" />
-              <span>2. Línea de Proyectos ({projects.length})</span>
+              <Gamepad2 className="w-3.5 h-3.5 flex-shrink-0" />
+              <span><span className="hidden sm:inline">2. Línea de Proyectos</span><span className="sm:hidden">2. Proyectos</span> ({projects.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('hero')}
-              className={`px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap ${
+              className={`px-3 sm:px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'hero'
                   ? 'bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 border border-transparent'
               }`}
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>3. Portada & Métricas</span>
+              <Sliders className="w-3.5 h-3.5 flex-shrink-0" />
+              <span><span className="hidden sm:inline">3. Portada & Métricas</span><span className="sm:hidden">3. Portada</span></span>
             </button>
 
             <button
               onClick={() => setActiveTab('backup')}
-              className={`px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap ${
+              className={`px-3 sm:px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'backup'
                   ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-bold'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 border border-transparent'
               }`}
             >
-              <FileDown className="w-3.5 h-3.5" />
-              <span>4. Respaldo & Exportación</span>
+              <FileDown className="w-3.5 h-3.5 flex-shrink-0" />
+              <span><span className="hidden sm:inline">4. Respaldo & Exportación</span><span className="sm:hidden">4. Respaldo</span></span>
             </button>
           </div>
         </div>
@@ -1295,7 +1295,7 @@ export default function ModDashboard({ onNavigateHome }) {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
                 <input
                   type="file"
                   ref={appsFileInputRef}
@@ -1306,7 +1306,7 @@ export default function ModDashboard({ onNavigateHome }) {
 
                 <button
                   onClick={handleOpenAddApp}
-                  className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-cyan-500/20 active:scale-95"
+                  className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-lg shadow-cyan-500/20 active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
                   <span>NUEVA APP</span>
@@ -1316,37 +1316,37 @@ export default function ModDashboard({ onNavigateHome }) {
                   onClick={() => saveApps(apps)}
                   disabled={isSavingDb}
                   title="Guardar todos los cambios en la base de datos en la nube"
-                  className={`px-3.5 py-2 rounded-lg border text-xs font-mono font-bold transition flex items-center space-x-1.5 active:scale-95 ${
+                  className={`px-3.5 py-2 rounded-lg border text-xs font-mono font-bold transition flex items-center justify-center space-x-1.5 active:scale-95 ${
                     isSavingDb 
                       ? 'bg-zinc-800 text-zinc-400 border-zinc-700 cursor-wait' 
                       : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20'
                   }`}
                 >
                   <Save className={`w-3.5 h-3.5 ${isSavingDb ? 'animate-spin' : ''}`} />
-                  <span>{isSavingDb ? 'Guardando...' : 'GUARDAR EN BD'}</span>
+                  <span>{isSavingDb ? 'Guardando...' : 'GUARDAR BD'}</span>
                 </button>
 
                 <button
                   onClick={handleDownloadAppsJson}
                   title="Descargar el archivo apps.json a tu equipo"
-                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition flex items-center space-x-1.5"
+                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition flex items-center justify-center space-x-1.5"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Descargar apps.json</span>
+                  <span>Descargar</span>
                 </button>
 
                 <button
                   onClick={() => appsFileInputRef.current?.click()}
                   title="Cargar un archivo apps.json desde tu computadora"
-                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-purple-400 hover:text-purple-300 transition flex items-center space-x-1.5"
+                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-purple-400 hover:text-purple-300 transition flex items-center justify-center space-x-1.5"
                 >
                   <FileUp className="w-3.5 h-3.5" />
-                  <span>Importar apps.json</span>
+                  <span>Importar</span>
                 </button>
 
                 <button
                   onClick={() => openExportModal('apps')}
-                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center space-x-1.5"
+                  className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center justify-center space-x-1.5"
                 >
                   <FileDown className="w-3.5 h-3.5 text-cyan-400" />
                   <span>Ver JSON</span>
@@ -1408,7 +1408,7 @@ export default function ModDashboard({ onNavigateHome }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 self-end md:self-center">
+                  <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-zinc-800/60 md:border-t-0 md:pt-0 w-full md:w-auto">
                     <button
                       onClick={() => handleDuplicateApp(app)}
                       className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-400 hover:text-zinc-200 transition flex items-center space-x-1.5"
@@ -1458,17 +1458,17 @@ export default function ModDashboard({ onNavigateHome }) {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleOpenAddProject}
-                  className="px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-amber-500/20 active:scale-95"
+                  className="px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-lg shadow-amber-500/20 active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
                   <span>NUEVO PROYECTO</span>
                 </button>
                 <button
                   onClick={() => openExportModal('projects')}
-                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center space-x-1.5"
+                  className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center justify-center space-x-1.5"
                 >
                   <FileDown className="w-3.5 h-3.5 text-amber-400" />
                   <span>Exportar Proyectos</span>
@@ -1549,7 +1549,7 @@ export default function ModDashboard({ onNavigateHome }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 self-end md:self-center">
+                  <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-zinc-800/60 md:border-t-0 md:pt-0 w-full md:w-auto">
                     <button
                       onClick={() => handlePromoteProjectToApp(proj)}
                       className="px-2.5 py-1.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 text-xs font-mono text-cyan-300 transition flex items-center space-x-1.5 shadow-sm active:scale-95"
@@ -1745,10 +1745,10 @@ export default function ModDashboard({ onNavigateHome }) {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => openExportModal('full')}
-                  className="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-emerald-500/20 active:scale-95"
+                  className="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-lg shadow-emerald-500/20 active:scale-95"
                 >
                   <FileDown className="w-4 h-4" />
                   <span>EXPORTAR TODO EL SITIO</span>
@@ -1759,7 +1759,7 @@ export default function ModDashboard({ onNavigateHome }) {
                     setImportJsonInput('');
                     setIsImportModalOpen(true);
                   }}
-                  className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center space-x-1.5"
+                  className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center justify-center space-x-1.5"
                 >
                   <FileUp className="w-4 h-4 text-cyan-400" />
                   <span>Restaurar / Importar</span>
@@ -1868,18 +1868,19 @@ export default function ModDashboard({ onNavigateHome }) {
       {/* MODAL: ADD / EDIT APP (TOTAL CONTROL: FORM & RAW JSON)                    */}
       {/* ========================================================================= */}
       {isAppModalOpen && editingApp && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#0c0e17] border border-zinc-800 rounded-2xl w-full max-w-3xl p-6 space-y-5 my-8 shadow-2xl relative">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800 pb-3 gap-3">
-              <div className="flex items-center space-x-2">
-                <Download className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-lg font-bold text-zinc-100">
-                  {apps.some(a => a.id === editingApp.id) ? 'Editar Aplicación del Carrusel' : 'Agregar Nueva Aplicación al Carrusel'}
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div className="bg-[#0c0e17] border border-zinc-800/90 rounded-2xl w-full max-w-3xl max-h-[94vh] sm:max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden animate-fadeIn">
+            {/* Pinned Fixed Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-3.5 sm:px-6 sm:py-4 flex-shrink-0 bg-[#0a0c14] gap-2">
+              <div className="flex items-center space-x-2 min-w-0">
+                <Download className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-zinc-100 truncate">
+                  {apps.some(a => a.id === editingApp.id) ? 'Editar Aplicación' : 'Nueva Aplicación'}
                 </h3>
               </div>
 
               {/* Mode Switcher: Visual Form vs Raw JSON */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 <div className="flex items-center space-x-1 bg-[#050608] p-1 rounded-lg border border-zinc-800 text-xs font-mono">
                   <button
                     type="button"
@@ -1896,9 +1897,9 @@ export default function ModDashboard({ onNavigateHome }) {
                       }
                       setAppModalTab('form');
                     }}
-                    className={`px-3 py-1 rounded transition ${appModalTab === 'form' ? 'bg-cyan-500 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+                    className={`px-2.5 sm:px-3 py-1 rounded transition text-xs ${appModalTab === 'form' ? 'bg-cyan-500 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
                   >
-                    Formulario Detallado
+                    Formulario
                   </button>
                   <button
                     type="button"
@@ -1907,54 +1908,57 @@ export default function ModDashboard({ onNavigateHome }) {
                       setAppRawJsonError('');
                       setAppModalTab('json');
                     }}
-                    className={`px-3 py-1 rounded transition flex items-center space-x-1 ${appModalTab === 'json' ? 'bg-cyan-500 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+                    className={`px-2.5 sm:px-3 py-1 rounded transition flex items-center space-x-1 text-xs ${appModalTab === 'json' ? 'bg-cyan-500 text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
                   >
                     <Code2 className="w-3.5 h-3.5" />
-                    <span>Editor JSON Directo</span>
+                    <span className="hidden sm:inline">Editor</span> JSON
                   </button>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setIsAppModalOpen(false)}
-                  className="text-zinc-400 hover:text-zinc-100 font-mono text-sm p-1"
+                  className="w-8 h-8 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center font-mono text-sm transition"
+                  title="Cerrar modal"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <form onSubmit={handleSaveAppForm} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-              {appModalTab === 'json' ? (
-                /* RAW JSON MODE: 100% UNRESTRICTED CONTROL */
-                <div className="space-y-3">
-                  <div className="p-3.5 rounded-xl bg-[#080b14] border border-cyan-500/30 text-xs font-mono text-cyan-300">
-                    <div className="font-bold flex items-center space-x-1.5 pb-1">
-                      <Code2 className="w-4 h-4 text-cyan-400" />
-                      <span>CONTROL TOTAL DEL OBJETO JSON</span>
+            <form onSubmit={handleSaveAppForm} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-y-auto modal-scroll p-4 sm:p-6 space-y-4">
+                {appModalTab === 'json' ? (
+                  /* RAW JSON MODE: 100% UNRESTRICTED CONTROL */
+                  <div className="space-y-3">
+                    <div className="p-3.5 rounded-xl bg-[#080b14] border border-cyan-500/30 text-xs font-mono text-cyan-300">
+                      <div className="font-bold flex items-center space-x-1.5 pb-1">
+                        <Code2 className="w-4 h-4 text-cyan-400" />
+                        <span>CONTROL TOTAL DEL OBJETO JSON</span>
+                      </div>
+                      <p className="text-zinc-400 text-[11px] leading-relaxed">
+                        Aquí puedes modificar directamente cualquier propiedad de la app, añadir nuevos campos o cambiar valores libremente. Al guardar se validará la sintaxis JSON.
+                      </p>
                     </div>
-                    <p className="text-zinc-400 text-[11px] leading-relaxed">
-                      Aquí puedes modificar directamente cualquier propiedad de la app, añadir nuevos campos o cambiar valores libremente. Al guardar se validará la sintaxis JSON.
-                    </p>
+
+                    {appRawJsonError && (
+                      <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-xs font-mono text-rose-300">
+                        ⚠️ {appRawJsonError}
+                      </div>
+                    )}
+
+                    <textarea
+                      rows={16}
+                      value={appRawJsonText}
+                      onChange={(e) => {
+                        setAppRawJsonText(e.target.value);
+                        setAppRawJsonError('');
+                      }}
+                      className="w-full bg-[#050608] border border-zinc-800 rounded-xl p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-cyan-500/50 modal-scroll"
+                      spellCheck={false}
+                    />
                   </div>
-
-                  {appRawJsonError && (
-                    <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-xs font-mono text-rose-300">
-                      ⚠️ {appRawJsonError}
-                    </div>
-                  )}
-
-                  <textarea
-                    rows={18}
-                    value={appRawJsonText}
-                    onChange={(e) => {
-                      setAppRawJsonText(e.target.value);
-                      setAppRawJsonError('');
-                    }}
-                    className="w-full bg-[#050608] border border-zinc-800 rounded-xl p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-cyan-500/50"
-                    spellCheck={false}
-                  />
-                </div>
-              ) : (
+                ) : (
                 /* VISUAL DETAILED FORM MODE */
                 <>
                   {/* PROJECT TEMPLATE AUTOFILL SELECTOR */}
@@ -1997,7 +2001,7 @@ export default function ModDashboard({ onNavigateHome }) {
 
                       {/* Dropdown list of projects */}
                       {isProjectDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-[#090b14] border border-zinc-700/80 rounded-xl shadow-2xl max-h-64 overflow-y-auto divide-y divide-zinc-800/60 animate-fadeIn">
+                        <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-[#090b14] border border-zinc-700/80 rounded-xl shadow-2xl max-h-60 overflow-y-auto modal-scroll divide-y divide-zinc-800/60 animate-fadeIn">
                           {projects
                             .filter(p => {
                               if (!projectSearchQuery) return true;
@@ -2352,12 +2356,14 @@ export default function ModDashboard({ onNavigateHome }) {
                   </div>
                 </>
               )}
+              </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
+              {/* Pinned Fixed Footer */}
+              <div className="flex-shrink-0 border-t border-zinc-800/90 bg-[#080a12] px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsAppModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-mono text-xs"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-mono text-xs border border-zinc-800 transition"
                 >
                   Cancelar
                 </button>
@@ -2378,24 +2384,28 @@ export default function ModDashboard({ onNavigateHome }) {
       {/* MODAL: ADD / EDIT PROJECT                                                 */}
       {/* ========================================================================= */}
       {isProjectModalOpen && editingProject && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#0c0e17] border border-zinc-800 rounded-2xl w-full max-w-2xl p-6 space-y-5 my-8 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div className="flex items-center space-x-2">
-                <Gamepad2 className="w-5 h-5 text-amber-400" />
-                <h3 className="text-lg font-bold text-zinc-100">
-                  {projects.some(p => p.id === editingProject.id) ? 'Editar Proyecto del Catálogo' : 'Agregar Nuevo Proyecto al Catálogo'}
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div className="bg-[#0c0e17] border border-zinc-800/90 rounded-2xl w-full max-w-2xl max-h-[94vh] sm:max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden animate-fadeIn">
+            {/* Pinned Fixed Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-3.5 sm:px-6 sm:py-4 flex-shrink-0 bg-[#0a0c14] gap-2">
+              <div className="flex items-center space-x-2 min-w-0">
+                <Gamepad2 className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-zinc-100 truncate">
+                  {projects.some(p => p.id === editingProject.id) ? 'Editar Proyecto' : 'Nuevo Proyecto'}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsProjectModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-100 font-mono text-sm"
+                className="w-8 h-8 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center font-mono text-sm transition"
+                title="Cerrar modal"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveProjectForm} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+            <form onSubmit={handleSaveProjectForm} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-y-auto modal-scroll p-4 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-zinc-400">ID Único (slug)</label>
@@ -2570,20 +2580,23 @@ export default function ModDashboard({ onNavigateHome }) {
                   Marcar como Proyecto Insignia (Flagship)
                 </label>
               </div>
+              </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
+              {/* Pinned Fixed Footer */}
+              <div className="flex-shrink-0 border-t border-zinc-800/90 bg-[#080a12] px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsProjectModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-mono text-xs"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-mono text-xs border border-zinc-800 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono text-xs font-bold transition shadow-lg shadow-amber-500/20"
+                  className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono text-xs font-bold transition shadow-lg shadow-amber-500/20 active:scale-95 flex items-center space-x-1.5"
                 >
-                  Guardar Proyecto
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Guardar Proyecto</span>
                 </button>
               </div>
             </form>
@@ -2595,40 +2608,46 @@ export default function ModDashboard({ onNavigateHome }) {
       {/* MODAL: EXPORT DATA                                                        */}
       {/* ========================================================================= */}
       {isExportModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c0e17] border border-zinc-800 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div className="flex items-center space-x-2">
-                <FileDown className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-base font-bold text-zinc-100">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div className="bg-[#0c0e17] border border-zinc-800/90 rounded-2xl w-full max-w-2xl max-h-[94vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+            {/* Pinned Fixed Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-3.5 sm:px-6 sm:py-4 flex-shrink-0 bg-[#0a0c14] gap-2">
+              <div className="flex items-center space-x-2 min-w-0">
+                <FileDown className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                <h3 className="text-base font-bold text-zinc-100 truncate">
                   Exportar Datos ({exportDataType === 'full' ? 'Respaldo Completo' : exportDataType})
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsExportModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-100 font-mono text-sm"
+                className="w-8 h-8 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center font-mono text-sm transition"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Descarga este archivo JSON o cópialo al portapapeles para restaurarlo cuando desees o incluirlo en el código fuente.
-            </p>
+            {/* Scrollable Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto modal-scroll p-4 sm:p-6 space-y-4">
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Descarga este archivo JSON o cópialo al portapapeles para restaurarlo cuando desees o incluirlo en el código fuente.
+              </p>
 
-            <div className="relative">
-              <textarea
-                readOnly
-                rows={12}
-                value={exportDataString}
-                className="w-full bg-[#050608] border border-zinc-800 rounded-lg p-3 text-[11px] font-mono text-emerald-400 focus:outline-none"
-              />
+              <div className="relative">
+                <textarea
+                  readOnly
+                  rows={12}
+                  value={exportDataString}
+                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg p-3 text-[11px] font-mono text-emerald-400 focus:outline-none modal-scroll max-h-[50vh]"
+                />
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            {/* Pinned Fixed Footer */}
+            <div className="flex-shrink-0 border-t border-zinc-800/90 bg-[#080a12] px-4 py-3 sm:px-6 sm:py-3.5 flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={copyToClipboard}
-                className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-xs font-mono transition flex items-center space-x-1.5"
+                className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-xs font-mono transition flex items-center space-x-1.5"
               >
                 {copiedExport ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
                 <span>{copiedExport ? '¡COPIADO!' : 'Copiar al Portapapeles'}</span>
@@ -2636,14 +2655,16 @@ export default function ModDashboard({ onNavigateHome }) {
 
               <div className="flex items-center space-x-2">
                 <button
+                  type="button"
                   onClick={() => setIsExportModalOpen(false)}
-                  className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-mono text-xs"
+                  className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-mono text-xs border border-zinc-800"
                 >
                   Cerrar
                 </button>
                 <button
+                  type="button"
                   onClick={downloadJsonFile}
-                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5"
+                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-cyan-500/20 active:scale-95"
                 >
                   <Download className="w-4 h-4" />
                   <span>Descargar Archivo JSON</span>
@@ -2658,56 +2679,62 @@ export default function ModDashboard({ onNavigateHome }) {
       {/* MODAL: IMPORT DATA                                                        */}
       {/* ========================================================================= */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0c0e17] border border-zinc-800 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div className="flex items-center space-x-2">
-                <FileUp className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-base font-bold text-zinc-100">Importar / Restaurar Respaldo</h3>
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div className="bg-[#0c0e17] border border-zinc-800/90 rounded-2xl w-full max-w-2xl max-h-[94vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+            {/* Pinned Fixed Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-3.5 sm:px-6 sm:py-4 flex-shrink-0 bg-[#0a0c14] gap-2">
+              <div className="flex items-center space-x-2 min-w-0">
+                <FileUp className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                <h3 className="text-base font-bold text-zinc-100 truncate">Importar / Restaurar Respaldo</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-100 font-mono text-sm"
+                className="w-8 h-8 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 flex items-center justify-center font-mono text-sm transition"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Pega el contenido JSON de un respaldo (completo o individual de apps/proyectos) para sincronizarlo al instante:
-            </p>
+            <form onSubmit={handleImportSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* Scrollable Body */}
+              <div className="flex-1 min-h-0 overflow-y-auto modal-scroll p-4 sm:p-6 space-y-4">
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Pega el contenido JSON de un respaldo (completo o individual de apps/proyectos) para sincronizarlo al instante:
+                </p>
 
-            <form onSubmit={handleImportSubmit} className="space-y-4">
-              <textarea
-                required
-                rows={10}
-                value={importJsonInput}
-                onChange={(e) => {
-                  setImportJsonInput(e.target.value);
-                  setImportError('');
-                }}
-                placeholder="Pega aquí el JSON exportado..."
-                className="w-full bg-[#050608] border border-zinc-800 rounded-lg p-3 text-xs font-mono text-zinc-200 focus:outline-none focus:border-cyan-500"
-              />
+                <textarea
+                  required
+                  rows={10}
+                  value={importJsonInput}
+                  onChange={(e) => {
+                    setImportJsonInput(e.target.value);
+                    setImportError('');
+                  }}
+                  placeholder="Pega aquí el JSON exportado..."
+                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg p-3 text-xs font-mono text-zinc-200 focus:outline-none focus:border-cyan-500 modal-scroll max-h-[50vh]"
+                />
 
-              {importError && (
-                <div className="text-xs font-mono text-rose-400 flex items-center space-x-1.5">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                  <span>{importError}</span>
-                </div>
-              )}
+                {importError && (
+                  <div className="text-xs font-mono text-rose-400 flex items-center space-x-1.5">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span>{importError}</span>
+                  </div>
+                )}
+              </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-2">
+              {/* Pinned Fixed Footer */}
+              <div className="flex-shrink-0 border-t border-zinc-800/90 bg-[#080a12] px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsImportModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-mono text-xs"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-mono text-xs border border-zinc-800 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-cyan-500/20"
+                  className="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-cyan-500/20 active:scale-95"
                 >
                   <FileUp className="w-4 h-4" />
                   <span>Cargar y Restaurar</span>

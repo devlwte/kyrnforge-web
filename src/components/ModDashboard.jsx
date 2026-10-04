@@ -38,7 +38,8 @@ import {
   Save,
   LayoutGrid,
   Info,
-  RefreshCw
+  RefreshCw,
+  Search
 } from 'lucide-react';
 import { initialAvailableApps } from '../data/defaultApps';
 import { initialProjects, initialSiteSettings } from '../data/defaultSiteData';
@@ -261,6 +262,9 @@ export default function ModDashboard({ onNavigateHome }) {
   const [appRawJsonText, setAppRawJsonText] = useState('');
   const [appRawJsonError, setAppRawJsonError] = useState('');
   const appsFileInputRef = React.useRef(null);
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [selectedProjectTemplate, setSelectedProjectTemplate] = useState(null);
 
   const [editingProject, setEditingProject] = useState(null);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -474,8 +478,119 @@ export default function ModDashboard({ onNavigateHome }) {
   };
 
   // --- APP CRUD OPERATIONS ---
-  // --- APP CRUD OPERATIONS ---
+  const handleApplyProjectTemplate = (project) => {
+    if (!project) return;
+    
+    // Auto-map tags to feature objects with smart icons
+    let mappedFeatures = [];
+    if (project.tags) {
+      const tagList = Array.isArray(project.tags) ? project.tags : String(project.tags).split('·').map(t => t.trim());
+      mappedFeatures = tagList.map(tagText => {
+        const lower = tagText.toLowerCase();
+        let iconName = 'Zap';
+        let color = 'text-cyan-400';
+        if (lower.includes('vault') || lower.includes('bóveda') || lower.includes('segur') || lower.includes('legal') || lower.includes('verific')) {
+          iconName = 'Shield';
+          color = 'text-emerald-400';
+        } else if (lower.includes('server') || lower.includes('runtime') || lower.includes('local') || lower.includes('micro') || lower.includes('dynexpress')) {
+          iconName = 'Server';
+          color = 'text-purple-400';
+        } else if (lower.includes('game') || lower.includes('launcher') || lower.includes('deck') || lower.includes('tienda')) {
+          iconName = 'Gamepad2';
+          color = 'text-amber-400';
+        } else if (lower.includes('compress') || lower.includes('brotli') || lower.includes('package') || lower.includes('pack')) {
+          iconName = 'Package';
+          color = 'text-cyan-400';
+        } else if (lower.includes('cli') || lower.includes('terminal') || lower.includes('demonio')) {
+          iconName = 'Terminal';
+          color = 'text-emerald-400';
+        } else if (lower.includes('cpu') || lower.includes('motor') || lower.includes('render') || lower.includes('engine')) {
+          iconName = 'Cpu';
+          color = 'text-cyan-400';
+        }
+        return { label: tagText, iconName, color };
+      });
+    }
+
+    // Determine colors based on badgeColor or project
+    const badgeColor = project.badgeColor || 'border-cyan-500/30 bg-cyan-950/40 text-cyan-400';
+    let themeBorder = 'border-cyan-500/40';
+    let themeGlow = 'shadow-cyan-500/20';
+    let glowClass = 'glow-cyan';
+    let btnBg = 'bg-cyan-500 hover:bg-cyan-400 text-zinc-950 shadow-cyan-500/25';
+    let accentText = 'text-cyan-400';
+
+    if (badgeColor.includes('purple')) {
+      themeBorder = 'border-purple-500/40';
+      themeGlow = 'shadow-purple-500/20';
+      glowClass = 'glow-purple';
+      btnBg = 'bg-purple-500 hover:bg-purple-400 text-zinc-950 shadow-purple-500/25';
+      accentText = 'text-purple-400';
+    } else if (badgeColor.includes('amber')) {
+      themeBorder = 'border-amber-500/40';
+      themeGlow = 'shadow-amber-500/20';
+      glowClass = 'glow-amber';
+      btnBg = 'bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-amber-500/25';
+      accentText = 'text-amber-400';
+    } else if (badgeColor.includes('emerald')) {
+      themeBorder = 'border-emerald-500/40';
+      themeGlow = 'shadow-emerald-500/20';
+      glowClass = 'glow-emerald';
+      btnBg = 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/25';
+      accentText = 'text-emerald-400';
+    }
+
+    const nextTag = String(apps.length + 1).padStart(2, '0');
+    const cleanShortName = project.title
+      .replace(/\(.*?\)/g, '')
+      .replace(/Platform|Launcher|Studio|Utility|Engine/gi, '')
+      .trim() || project.title;
+
+    const populatedApp = {
+      ...(editingApp || {}),
+      id: project.id || `app-${Date.now().toString(36)}`,
+      tag: editingApp?.tag || nextTag,
+      title: project.title,
+      shortName: cleanShortName,
+      badge: project.statusLabel || project.version || 'v1.0.0 Oficial',
+      badgeColor: badgeColor,
+      category: project.categoryLabel || project.category || 'Software Nativo',
+      system: 'Windows 10/11 (64-bit) · Instalador Oficial',
+      iconImg: project.iconImg || '/projects/default-app.svg',
+      iconScale: '',
+      themeBorder: themeBorder,
+      themeGlow: themeGlow,
+      glowClass: glowClass,
+      btnBg: btnBg,
+      accentText: accentText,
+      description: project.description,
+      features: mappedFeatures.length > 0 ? mappedFeatures : (editingApp?.features || []),
+      downloadUrl: project.downloadUrl || 'https://github.com/devlwte',
+      downloadLabel: project.downloadUrl ? 'DESCARGAR SETUP (.EXE)' : 'DESCARGAR SETUP (.ZIP)',
+      repoUrl: project.repoUrl || 'https://github.com/devlwte',
+      metaInfo: project.tags && Array.isArray(project.tags) 
+        ? project.tags.slice(0, 2).join(' · ') 
+        : 'Verificación SHA-256 · Freeware Legal'
+    };
+
+    setEditingApp(populatedApp);
+    setAppRawJsonText(JSON.stringify(populatedApp, null, 2));
+    setSelectedProjectTemplate(project);
+    setIsProjectDropdownOpen(false);
+    setProjectSearchQuery('');
+    showToast(`✓ Datos cargados desde el proyecto "${project.title}"`);
+  };
+
+  const handlePromoteProjectToApp = (project) => {
+    handleOpenAddApp();
+    handleApplyProjectTemplate(project);
+    setActiveTab('apps');
+  };
+
   const handleOpenAddApp = () => {
+    setSelectedProjectTemplate(null);
+    setProjectSearchQuery('');
+    setIsProjectDropdownOpen(false);
     const nextTag = String(apps.length + 1).padStart(2, '0');
     const newApp = {
       id: `app-${Date.now().toString(36)}`,
@@ -511,6 +626,9 @@ export default function ModDashboard({ onNavigateHome }) {
   };
 
   const handleOpenEditApp = (app) => {
+    setSelectedProjectTemplate(null);
+    setProjectSearchQuery('');
+    setIsProjectDropdownOpen(false);
     const clone = JSON.parse(JSON.stringify(app));
     if (!Array.isArray(clone.features)) clone.features = [];
     setEditingApp(clone);
@@ -1433,6 +1551,14 @@ export default function ModDashboard({ onNavigateHome }) {
 
                   <div className="flex items-center space-x-2 self-end md:self-center">
                     <button
+                      onClick={() => handlePromoteProjectToApp(proj)}
+                      className="px-2.5 py-1.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 text-xs font-mono text-cyan-300 transition flex items-center space-x-1.5 shadow-sm active:scale-95"
+                      title="Abrir como nueva app en el carrusel con todos sus datos ya autorellenados"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>+ Al Carrusel</span>
+                    </button>
+                    <button
                       onClick={() => handleOpenEditProject(proj)}
                       className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-amber-400 hover:text-amber-300 transition flex items-center space-x-1.5"
                     >
@@ -1831,6 +1957,124 @@ export default function ModDashboard({ onNavigateHome }) {
               ) : (
                 /* VISUAL DETAILED FORM MODE */
                 <>
+                  {/* PROJECT TEMPLATE AUTOFILL SELECTOR */}
+                  <div className="p-3.5 rounded-xl bg-[#070912] border border-cyan-500/30 space-y-2.5 relative">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-xs font-mono font-bold text-cyan-300">
+                        <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Autorellenar desde un Proyecto del Catálogo</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-500">
+                        {projects.length} proyectos disponibles
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <div className="flex items-center space-x-2">
+                        <div className="relative flex-1">
+                          <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            type="text"
+                            value={projectSearchQuery}
+                            onChange={(e) => {
+                              setProjectSearchQuery(e.target.value);
+                              setIsProjectDropdownOpen(true);
+                            }}
+                            onFocus={() => setIsProjectDropdownOpen(true)}
+                            placeholder="Buscar proyecto para cargar datos (ej. PlayWarp, Kyrnex, GetGame)..."
+                            className="w-full bg-[#050608] border border-zinc-800 focus:border-cyan-500/60 rounded-lg pl-8 pr-3 py-2 text-xs font-mono text-zinc-200 placeholder-zinc-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                          className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 transition flex items-center space-x-1"
+                        >
+                          <span>{isProjectDropdownOpen ? 'Cerrar' : 'Ver Lista'}</span>
+                          <ArrowDown className={`w-3 h-3 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      </div>
+
+                      {/* Dropdown list of projects */}
+                      {isProjectDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-[#090b14] border border-zinc-700/80 rounded-xl shadow-2xl max-h-64 overflow-y-auto divide-y divide-zinc-800/60 animate-fadeIn">
+                          {projects
+                            .filter(p => {
+                              if (!projectSearchQuery) return true;
+                              const q = projectSearchQuery.toLowerCase();
+                              return p.title.toLowerCase().includes(q) || 
+                                     p.id.toLowerCase().includes(q) || 
+                                     (p.categoryLabel && p.categoryLabel.toLowerCase().includes(q));
+                            })
+                            .map(proj => (
+                              <button
+                                key={proj.id}
+                                type="button"
+                                onClick={() => handleApplyProjectTemplate(proj)}
+                                className="w-full px-3.5 py-2.5 text-left hover:bg-cyan-950/30 flex items-center justify-between gap-3 transition group"
+                              >
+                                <div className="flex items-center space-x-3 min-w-0">
+                                  <div className="w-8 h-8 rounded-lg bg-[#050608] border border-zinc-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                    <img 
+                                      src={proj.iconImg || '/projects/default-app.svg'} 
+                                      alt={proj.title}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { e.currentTarget.src = "/projects/default-app.svg"; }}
+                                    />
+                                  </div>
+                                  <div className="truncate">
+                                    <div className="text-xs font-bold text-zinc-200 group-hover:text-cyan-300 truncate">
+                                      {proj.title}
+                                    </div>
+                                    <div className="text-[10px] font-mono text-zinc-500 truncate">
+                                      {proj.categoryLabel || proj.category}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2 flex-shrink-0">
+                                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${proj.badgeColor || 'border-zinc-800 text-zinc-400'}`}>
+                                    {proj.statusLabel || proj.version}
+                                  </span>
+                                  <span className="text-xs font-mono text-cyan-400 group-hover:translate-x-0.5 transition-transform flex items-center space-x-1">
+                                    <span>Cargar</span>
+                                    <span>→</span>
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          {projects.filter(p => {
+                            if (!projectSearchQuery) return true;
+                            const q = projectSearchQuery.toLowerCase();
+                            return p.title.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+                          }).length === 0 && (
+                            <div className="p-3 text-center text-xs font-mono text-zinc-500">
+                              No se encontró ningún proyecto con "{projectSearchQuery}"
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedProjectTemplate && (
+                      <div className="flex items-center justify-between pt-1 px-1 text-[11px] font-mono">
+                        <span className="text-emerald-400 flex items-center space-x-1">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Plantilla activa cargada: <b>{selectedProjectTemplate.title}</b></span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProjectTemplate(null);
+                            showToast('Plantilla desvinculada (los campos permanecen)');
+                          }}
+                          className="text-zinc-500 hover:text-zinc-300 underline"
+                        >
+                          Desvincular
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-mono text-zinc-400">ID Único (slug de la app)</label>

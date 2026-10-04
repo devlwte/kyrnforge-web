@@ -489,41 +489,44 @@ export default function App() {
             </div>
 
             {/* Carousel Navigation Toolbar */}
-            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3">
-              <div className="text-xs font-mono text-zinc-400 bg-zinc-900/90 px-3 py-1.5 rounded-lg border border-zinc-800 flex items-center space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-zinc-200 font-bold">{availableApps[currentAppIndex]?.tag}</span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-zinc-500">0{availableApps.length}</span>
-              </div>
+            {availableApps.length > 0 && (
+              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3">
+                <div className="text-xs font-mono text-zinc-400 bg-zinc-900/90 px-3 py-1.5 rounded-lg border border-zinc-800 flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-zinc-200 font-bold">{availableApps[currentAppIndex]?.tag}</span>
+                  <span className="text-zinc-600">/</span>
+                  <span className="text-zinc-500">0{availableApps.length}</span>
+                </div>
 
-              <div className="flex items-center space-x-1.5">
-                <button
-                  onClick={prevApp}
-                  aria-label="Aplicación anterior"
-                  title="Anterior aplicación"
-                  className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={nextApp}
-                  aria-label="Siguiente aplicación"
-                  title="Siguiente aplicación"
-                  className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={prevApp}
+                    aria-label="Aplicación anterior"
+                    title="Anterior aplicación"
+                    className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={nextApp}
+                    aria-label="Siguiente aplicación"
+                    title="Siguiente aplicación"
+                    className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Active Carousel Card Container with Smooth Sliding Track */}
-          <div 
-            className={`bg-[#0a0c12] border border-zinc-800 rounded-2xl relative overflow-hidden transition-all duration-500 ${availableApps[currentAppIndex]?.glowClass}`}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
+          {availableApps.length > 0 ? (
+            <div 
+              className={`bg-[#0a0c12] border border-zinc-800 rounded-2xl relative overflow-hidden transition-all duration-500 ${availableApps[currentAppIndex]?.glowClass || ''}`}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
             {/* Horizontal Sliding Track */}
             <div className="overflow-hidden w-full">
               <div 
@@ -659,8 +662,13 @@ export default function App() {
                 ))}
               </div>
             </div>
-
-          </div>
+            </div>
+          ) : (
+            <div className="bg-[#0a0c12] border border-zinc-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+              <div className="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+              <p className="text-xs font-mono text-zinc-400">Sincronizando aplicaciones desde Cloudflare KV...</p>
+            </div>
+          )}
         </section>
 
         {/* All Projects & Pipeline Grid */}
@@ -696,7 +704,8 @@ export default function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {projects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredProjects.map((p) => {
               const IconComponent = p.icon;
               return (
@@ -775,7 +784,13 @@ export default function App() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          ) : (
+            <div className="bg-[#0a0c12] border border-zinc-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+              <div className="w-8 h-8 rounded-full border-2 border-amber-500/20 border-t-amber-500 animate-spin" />
+              <p className="text-xs font-mono text-zinc-400">Sincronizando catálogo de proyectos desde Cloudflare KV...</p>
+            </div>
+          )}
         </section>
 
         {/* Live Interactive API Gateway Console */}

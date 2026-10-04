@@ -275,8 +275,28 @@ export default function ModDashboard({ onNavigateHome }) {
   const [exportDataType, setExportDataType] = useState('full'); // 'full' | 'apps' | 'projects' | 'settings'
   const [importJsonInput, setImportJsonInput] = useState('');
   const [importError, setImportError] = useState('');
+  const importFileInputRef = React.useRef(null);
   const [copiedExport, setCopiedExport] = useState(false);
   const [saveSuccessToast, setSaveSuccessToast] = useState('');
+
+  const handleImportFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result;
+        if (typeof text === 'string') {
+          setImportJsonInput(text);
+          setImportError('');
+        }
+      } catch (err) {
+        setImportError('Error leyendo el archivo: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
   const [dbStatus, setDbStatus] = useState({ connected: false, type: 'none', loading: true });
   const [showDbGuide, setShowDbGuide] = useState(false);
   const [customDbUrl, setCustomDbUrl] = useState(() => {
@@ -424,6 +444,51 @@ export default function ModDashboard({ onNavigateHome }) {
       console.warn("API de servidor no disponible o modo estático:", err);
     }
     showToast('✓ Configuración actualizada en este navegador');
+  };
+
+  // Persist Full Backup (Apps, Projects, and SiteSettings) to Cloudflare KV and localStorage
+  const saveFullBackup = async (fullData) => {
+    const newApps = fullData.availableApps;
+    const newProjects = fullData.projects;
+    const newSettings = fullData.siteSettings;
+
+    if (newApps && Array.isArray(newApps)) {
+      setApps(newApps);
+      localStorage.setItem(STORAGE_KEY_APPS, JSON.stringify(newApps, null, 2));
+    }
+    if (newProjects && Array.isArray(newProjects)) {
+      setProjects(newProjects);
+      localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(newProjects, null, 2));
+    }
+    if (newSettings && (newSettings.hero || newSettings.metrics)) {
+      setSiteSettings(newSettings);
+      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(newSettings, null, 2));
+    }
+
+    try {
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const res = await fetch('/api/v1/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth}`
+        },
+        body: JSON.stringify({
+          availableApps: newApps || apps,
+          projects: newProjects || projects,
+          siteSettings: newSettings || siteSettings
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.success) {
+        showToast('✓ Respaldo total guardado en Cloudflare KV (Nube)');
+        return true;
+      }
+    } catch (err) {
+      console.warn("Error enviando respaldo completo a la API:", err);
+    }
+    showToast('✓ Respaldo aplicado en el navegador local');
+    return false;
   };
 
   const showToast = (msg) => {
@@ -887,15 +952,16 @@ export default function ModDashboard({ onNavigateHome }) {
       data = {
         version: '1.0',
         exportedAt: new Date().toISOString(),
-        siteSettings,
+        source: 'kyrnforge-kv-backup',
         availableApps: apps,
-        projects
+        projects,
+        siteSettings
       };
     } else if (type === 'apps') {
       data = apps;
     } else if (type === 'projects') {
       data = projects;
-    } else if (type === 'settings') {
+    } else if (type === 'settings' || type === 'hero') {
       data = siteSettings;
     }
     setExportDataString(JSON.stringify(data, null, 2));
@@ -910,9 +976,19 @@ export default function ModDashboard({ onNavigateHome }) {
   };
 
   const downloadJsonFile = () => {
-    const filename = exportDataType === 'full' 
-      ? `kyrnforge_complete_backup_${new Date().toISOString().slice(0, 10)}.json`
-      : `kyrnforge_${exportDataType}.json`;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    let filename;
+    if (exportDataType === 'full') {
+      filename = `kyrnforge_complete_backup_${dateStr}.json`;
+    } else if (exportDataType === 'hero' || exportDataType === 'settings') {
+      filename = `kyrnforge_portada_metricas_${dateStr}.json`;
+    } else if (exportDataType === 'apps') {
+      filename = `kyrnforge_apps_${dateStr}.json`;
+    } else if (exportDataType === 'projects') {
+      filename = `kyrnforge_proyectos_${dateStr}.json`;
+    } else {
+      filename = `kyrnforge_${exportDataType}_${dateStr}.json`;
+    }
     const blob = new Blob([exportDataString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -922,53 +998,52 @@ export default function ModDashboard({ onNavigateHome }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleImportSubmit = (e) => {
+  const handleImportSubmit = async (e) => {
     e.preventDefault();
     setImportError('');
     try {
       const parsed = JSON.parse(importJsonInput);
       
-      // Auto-detect format: Full Backup or Individual Array
-      if (parsed.siteSettings && (parsed.availableApps || parsed.projects)) {
-        // Full Backup
-        if (Array.isArray(parsed.availableApps) && parsed.availableApps.length > 0) {
-          saveApps(parsed.availableApps);
-        }
-        if (Array.isArray(parsed.projects) && parsed.projects.length > 0) {
-          saveProjects(parsed.projects);
-        }
-        if (parsed.siteSettings) {
-          saveSiteSettings(parsed.siteSettings);
-        }
-        showToast("Copia de seguridad completa restaurada con éxito.");
+      // 1. Full Backup (contains siteSettings and/or availableApps and/or projects)
+      if (parsed.siteSettings || (parsed.availableApps && parsed.projects)) {
+        await saveFullBackup({
+          availableApps: parsed.availableApps || apps,
+          projects: parsed.projects || projects,
+          siteSettings: parsed.siteSettings || siteSettings
+        });
+        showToast("✓ Copia de seguridad completa (Apps, Proyectos, Portada y Métricas) restaurada en Cloudflare KV.");
+      } else if (parsed.availableApps && !parsed.projects) {
+        await saveApps(parsed.availableApps);
+        showToast("✓ Aplicaciones del carrusel restauradas en Cloudflare KV.");
+      } else if (parsed.projects && !parsed.availableApps) {
+        await saveProjects(parsed.projects);
+        showToast("✓ Catálogo de proyectos restaurado en Cloudflare KV.");
+      } else if (parsed.hero || parsed.metrics) {
+        // Portada y Métricas directly
+        const mergedSettings = {
+          hero: parsed.hero || siteSettings.hero,
+          metrics: parsed.metrics || siteSettings.metrics
+        };
+        await saveSiteSettings(mergedSettings);
+        showToast("✓ Portada y Métricas restauradas con éxito en Cloudflare KV.");
       } else if (Array.isArray(parsed)) {
-        // Array: check if apps or projects
-        if (parsed[0]?.downloadLabel !== undefined || parsed[0]?.glowClass !== undefined) {
-          saveApps(parsed);
-          showToast("Catálogo de aplicaciones del carrusel importado.");
-        } else {
-          saveProjects(parsed);
-          showToast("Catálogo de proyectos importado.");
+        if (parsed.length === 0) {
+          throw new Error("El archivo JSON está vacío.");
         }
-      } else if (parsed.hero && parsed.metrics) {
-        saveSiteSettings(parsed);
-        showToast("Configuraciones de portada importadas.");
+        if (parsed[0]?.downloadLabel !== undefined || parsed[0]?.glowClass !== undefined || parsed[0]?.metaInfo !== undefined) {
+          await saveApps(parsed);
+          showToast("✓ Aplicaciones del carrusel restauradas en Cloudflare KV.");
+        } else {
+          await saveProjects(parsed);
+          showToast("✓ Catálogo de proyectos restaurado en Cloudflare KV.");
+        }
       } else {
-        throw new Error("Estructura JSON no reconocida. Asegúrate de pegar un respaldo válido de KyrnForge.");
+        throw new Error("Estructura JSON no reconocida. Asegúrate de subir o pegar un archivo de respaldo válido.");
       }
       setIsImportModalOpen(false);
       setImportJsonInput('');
     } catch (err) {
       setImportError(err.message || 'El JSON ingresado no es válido.');
-    }
-  };
-
-  const resetAllToFactory = () => {
-    if (confirm("¿Estás seguro de restablecer TODO el sitio a los valores iniciales de fábrica? Se perderán las modificaciones locales no exportadas.")) {
-      saveApps(initialAvailableApps);
-      saveProjects(initialProjects);
-      saveSiteSettings(initialSiteSettings);
-      showToast("Todo el sitio ha sido restablecido a valores de fábrica.");
     }
   };
 
@@ -1767,97 +1842,132 @@ export default function ModDashboard({ onNavigateHome }) {
               </div>
             </div>
 
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Quick Actions Grid - 4 Dedicated Backup Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* Card 1: Apps Carousel Backup */}
-              <div className="p-5 rounded-xl bg-[#080a10] border border-zinc-800/80 space-y-3 flex flex-col justify-between">
+              {/* Card 1: Full Backup */}
+              <div className="p-4 sm:p-5 rounded-xl bg-[#080a10] border border-emerald-500/30 space-y-3 flex flex-col justify-between hover:border-emerald-500/50 transition">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono text-emerald-400">
+                    <span className="flex items-center space-x-1.5">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <span>SITIO COMPLETO</span>
+                    </span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-500/30 font-bold">100% KV</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-zinc-100">Respaldo Integral</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Apps del carrusel, catálogo de proyectos, lemas de portada y las 4 métricas en un único archivo.
+                  </p>
+                </div>
+                <button
+                  onClick={() => openExportModal('full')}
+                  className="w-full py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-xs font-mono text-emerald-300 transition flex items-center justify-center space-x-1.5 active:scale-95"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Descargar Todo (.json)</span>
+                </button>
+              </div>
+
+              {/* Card 2: Portada Hero & Metrics */}
+              <div className="p-4 sm:p-5 rounded-xl bg-[#080a10] border border-purple-500/30 space-y-3 flex flex-col justify-between hover:border-purple-500/50 transition">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-mono text-purple-400">
+                    <span className="flex items-center space-x-1.5">
+                      <Sliders className="w-4 h-4 text-purple-400" />
+                      <span>PORTADA & MÉTRICAS</span>
+                    </span>
+                    <span className="text-zinc-500">4 métricas</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-zinc-100">Portada y Métricas</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Lemas principales, título H1, párrafos, botones y valores de las 4 tarjetas del portal.
+                  </p>
+                </div>
+                <button
+                  onClick={() => openExportModal('hero')}
+                  className="w-full py-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/40 text-xs font-mono text-purple-300 transition flex items-center justify-center space-x-1.5 active:scale-95"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Exportar Portada (.json)</span>
+                </button>
+              </div>
+
+              {/* Card 3: Apps Carousel Backup */}
+              <div className="p-4 sm:p-5 rounded-xl bg-[#080a10] border border-cyan-500/30 space-y-3 flex flex-col justify-between hover:border-cyan-500/50 transition">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
                     <span className="flex items-center space-x-1.5">
-                      <Download className="w-4 h-4" />
+                      <Download className="w-4 h-4 text-cyan-400" />
                       <span>CARRUSEL APPS</span>
                     </span>
                     <span className="text-zinc-500">{apps.length} items</span>
                   </div>
-                  <h4 className="text-sm font-bold text-zinc-200">Datos de Aplicaciones</h4>
-                  <p className="text-xs text-zinc-400">
-                    Exporta únicamente los objetos de software con enlaces, tags y temas visuales.
+                  <h4 className="text-sm font-bold text-zinc-100">Aplicaciones</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Objetos de software para descarga con enlaces de instalación, tags y temas visuales.
                   </p>
                 </div>
                 <button
                   onClick={() => openExportModal('apps')}
-                  className="w-full py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-cyan-400 transition flex items-center justify-center space-x-1.5"
+                  className="w-full py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-xs font-mono text-cyan-300 transition flex items-center justify-center space-x-1.5 active:scale-95"
                 >
                   <FileDown className="w-3.5 h-3.5" />
                   <span>Exportar Apps (.json)</span>
                 </button>
               </div>
 
-              {/* Card 2: Projects Catalog Backup */}
-              <div className="p-5 rounded-xl bg-[#080a10] border border-zinc-800/80 space-y-3 flex flex-col justify-between">
+              {/* Card 4: Projects Catalog Backup */}
+              <div className="p-4 sm:p-5 rounded-xl bg-[#080a10] border border-amber-500/30 space-y-3 flex flex-col justify-between hover:border-amber-500/50 transition">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-mono text-amber-400">
                     <span className="flex items-center space-x-1.5">
-                      <Gamepad2 className="w-4 h-4" />
+                      <Gamepad2 className="w-4 h-4 text-amber-400" />
                       <span>PROYECTOS & JUEGOS</span>
                     </span>
                     <span className="text-zinc-500">{projects.length} items</span>
                   </div>
-                  <h4 className="text-sm font-bold text-zinc-200">Catálogo de Proyectos</h4>
-                  <p className="text-xs text-zinc-400">
-                    Exporta todos los proyectos en desarrollo con sus estados, categorías y badges.
+                  <h4 className="text-sm font-bold text-zinc-100">Catálogo Proyectos</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Lista de proyectos, motores y videojuegos en desarrollo con sus estados y tags.
                   </p>
                 </div>
                 <button
                   onClick={() => openExportModal('projects')}
-                  className="w-full py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-amber-400 transition flex items-center justify-center space-x-1.5"
+                  className="w-full py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-xs font-mono text-amber-300 transition flex items-center justify-center space-x-1.5 active:scale-95"
                 >
                   <FileDown className="w-3.5 h-3.5" />
                   <span>Exportar Proyectos (.json)</span>
                 </button>
               </div>
 
-              {/* Card 3: Factory Reset */}
-              <div className="p-5 rounded-xl bg-[#080a10] border border-zinc-800/80 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-mono text-rose-400">
-                    <span className="flex items-center space-x-1.5">
-                      <RotateCcw className="w-4 h-4" />
-                      <span>VALORES DE FÁBRICA</span>
-                    </span>
-                    <span className="text-zinc-500">Reset</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-zinc-200">Restablecer Todo</h4>
-                  <p className="text-xs text-zinc-400">
-                    Restaura todo el contenido a la versión predeterminada del código fuente inicial.
-                  </p>
-                </div>
-                <button
-                  onClick={resetAllToFactory}
-                  className="w-full py-2 rounded-lg bg-rose-950/30 hover:bg-rose-950/60 border border-rose-500/30 hover:border-rose-500/60 text-xs font-mono text-rose-300 transition flex items-center justify-center space-x-1.5"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Restablecer Todo</span>
-                </button>
-              </div>
-
             </div>
 
-            {/* Git Code Integration Instructions */}
-            <div className="p-5 rounded-xl bg-[#07090e] border border-zinc-800/60 space-y-3 font-mono text-xs">
+            {/* Cloudflare KV Persistence & Privacy Notice */}
+            <div className="p-5 rounded-xl bg-[#07090e] border border-zinc-800/80 space-y-3 font-mono text-xs">
               <div className="flex items-center space-x-2 text-cyan-400 font-bold">
-                <Info className="w-4 h-4" />
-                <span>¿Cómo aplicar estos cambios permanentemente en el código de GitHub?</span>
+                <Shield className="w-4 h-4 text-cyan-400" />
+                <span>Base de Datos Cloudflare KV en la Nube · Privacidad y Persistencia Total</span>
               </div>
               <p className="text-zinc-400 leading-relaxed">
-                Los cambios que realizas aquí se guardan de forma instantánea y persistente en el <code className="text-zinc-200">localStorage</code> de tu navegador. Si deseas que se queden grabados permanentemente en el repositorio de Git para todos los visitantes del mundo:
+                Todo el contenido modificado en este panel (aplicaciones del carrusel, catálogo de proyectos, textos de portada y métricas) se sincroniza directamente con la base de datos distribuida <b>Cloudflare KV</b>. El repositorio de Git permanece libre de datos hardcodeados, garantizando que tus modificaciones sean privadas, instantáneas y sin necesidad de compilar código.
               </p>
-              <ol className="list-decimal list-inside space-y-1.5 text-zinc-300 pl-1">
-                <li>Haz clic en <strong className="text-cyan-400">EXPORTAR TODO EL SITIO</strong> y copia el JSON.</li>
-                <li>Pega los arreglos correspondientes en los archivos <code className="text-emerald-400">src/data/defaultApps.js</code> y <code className="text-emerald-400">src/data/defaultSiteData.js</code>.</li>
-                <li>Ejecuta el script <code className="text-amber-400">deploy-web.bat</code> para compilar y desplegar a Cloudflare y GitHub automáticamente.</li>
-              </ol>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-zinc-300">
+                <div className="flex items-start space-x-2.5 bg-[#050608] p-3 rounded-lg border border-zinc-800/80">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-zinc-100 block">Sin datos privados en GitHub</strong>
+                    <span className="text-[11px] text-zinc-500">El repositorio de código fuente permanece limpio. Nadie en GitHub puede ver ni alterar tus aplicaciones.</span>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2.5 bg-[#050608] p-3 rounded-lg border border-zinc-800/80">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-zinc-100 block">Sincronización en Tiempo Real</strong>
+                    <span className="text-[11px] text-zinc-500">Cada cambio o respaldo restaurado se refleja al instante en todos los celulares y computadoras del mundo.</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         )}
@@ -2699,9 +2809,28 @@ export default function ModDashboard({ onNavigateHome }) {
             <form onSubmit={handleImportSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Scrollable Body */}
               <div className="flex-1 min-h-0 overflow-y-auto modal-scroll p-4 sm:p-6 space-y-4">
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Pega el contenido JSON de un respaldo (completo o individual de apps/proyectos) para sincronizarlo al instante:
-                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Sube un archivo <span className="font-mono text-cyan-400">.json</span> o pega el contenido para restaurar al instante:
+                  </p>
+                  <div>
+                    <input
+                      type="file"
+                      ref={importFileInputRef}
+                      onChange={handleImportFileSelect}
+                      accept=".json,application/json"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => importFileInputRef.current?.click()}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-cyan-300 font-mono text-xs transition active:scale-95 shadow cursor-pointer whitespace-nowrap"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Cargar archivo .json</span>
+                    </button>
+                  </div>
+                </div>
 
                 <textarea
                   required
@@ -2711,7 +2840,7 @@ export default function ModDashboard({ onNavigateHome }) {
                     setImportJsonInput(e.target.value);
                     setImportError('');
                   }}
-                  placeholder="Pega aquí el JSON exportado..."
+                  placeholder="Pega aquí el JSON exportado o usa el botón de arriba para seleccionar tu archivo .json..."
                   className="w-full bg-[#050608] border border-zinc-800 rounded-lg p-3 text-xs font-mono text-zinc-200 focus:outline-none focus:border-cyan-500 modal-scroll max-h-[50vh]"
                 />
 

@@ -74,7 +74,9 @@ export async function onRequestPost(context) {
     const authHeader = request.headers.get("Authorization") || request.headers.get("x-admin-key") || "";
     const cleanAuth = authHeader.replace("Bearer ", "").trim();
 
-    if (cleanAuth !== "kyrnforge2026" && cleanAuth !== "admin") {
+    const expectedKey = env?.ADMIN_KEY || env?.MOD_PASSWORD || env?.ADMIN_PASSWORD || "kyrnforge2026";
+
+    if (!cleanAuth || cleanAuth !== expectedKey) {
       return new Response(JSON.stringify({
         success: false,
         error: "No autorizado. Clave de administrador incorrecta."

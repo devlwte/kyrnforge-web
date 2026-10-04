@@ -51,7 +51,7 @@
     "title": "Kyrnex Platform",
     "version": "v1.0.0 Estable",
     "status": "production",
-    "statusLabel": "Producción Estable",
+    "statusLabel": "Listo para Producción",
     "badgeColor": "border-purple-500/40 text-purple-400 bg-purple-950/30",
     "iconImg": "/projects/kyrnex.png",
     "iconName": "Server",
@@ -63,30 +63,9 @@
       "Manager de Servidores",
       "Cero Configuración"
     ],
-    "repoUrl": null,
-    "isFlagship": false
-  },
-  {
-    "id": "2dgo",
-    "category": "gaming",
-    "categoryLabel": "Motor de Videojuegos",
-    "title": "2DGO Engine",
-    "version": "Core Architecture",
-    "status": "dev",
-    "statusLabel": "Arquitectura & Core",
-    "badgeColor": "border-cyan-500/40 text-cyan-400 bg-cyan-950/30",
-    "iconImg": "/projects/2dgo.png",
-    "iconName": "Code2",
-    "iconColor": "text-cyan-400 bg-cyan-950/40 border-cyan-500/30",
-    "description": "Framework modular de alto rendimiento para renderizado 2D, físicas de plataformas ágiles y videojuegos retro-modernos. Diseñado para ofrecer máxima tasa de cuadros por segundo con un consumo ultra bajo de CPU y memoria en cualquier computadora.",
-    "tags": [
-      "2D Game Engine",
-      "Render Ultra-Fluido",
-      "Física de Plataformas",
-      "Bajo Consumo"
-    ],
-    "repoUrl": null,
-    "isFlagship": false
+    "repoUrl": "https://github.com/devlwte/kyrnex",
+    "isFlagship": true,
+    "downloadUrl": "https://github.com/devlwte/kyrnex/releases/download/v1.0.3/Kyrnex-Setup-1.0.3.exe"
   },
   {
     "id": "getgame",

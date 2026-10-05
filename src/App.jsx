@@ -26,6 +26,7 @@ import {
   X
 } from 'lucide-react';
 import ModDashboard from './components/ModDashboard';
+import AppDetailView from './components/AppDetailView';
 import { initialAvailableApps } from './data/defaultApps';
 import { initialProjects, initialSiteSettings } from './data/defaultSiteData';
 
@@ -308,6 +309,20 @@ export default function App() {
   // Render Moderator / Admin Dashboard when accessing /mod
   if (currentPath === '/mod' || currentPath === '/mod/') {
     return <ModDashboard onNavigateHome={() => navigateTo('/')} />;
+  }
+
+  // Render Dynamic App Detail Page when accessing /app/:id
+  if (currentPath.startsWith('/app/') || currentPath === '/app') {
+    const rawId = currentPath.replace(/^\/app\/?/, '').split('/')[0].split('?')[0];
+    return (
+      <AppDetailView
+        appId={rawId}
+        availableApps={availableApps}
+        projects={projects}
+        onNavigateHome={() => navigateTo('/')}
+        onNavigateApp={(id) => navigateTo(`/app/${id}`)}
+      />
+    );
   }
 
   return (
@@ -608,6 +623,14 @@ export default function App() {
                           <span>{copiedAppId === app.id ? 'ENLACE COPIADO' : 'COPIAR ENLACE'}</span>
                         </button>
 
+                        <button
+                          onClick={() => navigateTo(`/app/${app.id}`)}
+                          className="px-4 py-2 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono transition flex items-center justify-center space-x-1.5 active:scale-95"
+                        >
+                          <span>Ficha Oficial &amp; Detalles</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+
                         <a
                           href={app.repoUrl}
                           target="_blank"
@@ -767,19 +790,27 @@ export default function App() {
                       ))}
                     </div>
 
-                    {p.repoUrl && (
-                      <div className="pt-1">
+                    <div className="pt-1 flex items-center justify-between">
+                      <button 
+                        onClick={() => navigateTo(`/app/${p.id}`)}
+                        className="inline-flex items-center space-x-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition group"
+                      >
+                        <span>Ver Ficha Oficial</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+
+                      {p.repoUrl && (
                         <a 
                           href={p.repoUrl} 
                           target="_blank" 
                           rel="noreferrer"
-                          className="inline-flex items-center space-x-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition"
+                          className="inline-flex items-center space-x-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-200 transition"
                         >
-                          <span>Ver en GitHub</span>
+                          <span>GitHub</span>
                           <ExternalLink className="w-3 h-3" />
                         </a>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               );

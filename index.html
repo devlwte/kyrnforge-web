@@ -4,12 +4,78 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KyrnForge · Engineering & Indie Software Forge</title>
-    <meta name="description" content="Laboratorio independiente de ingeniería de software para Windows, criptografía y videojuegos ligeros." />
+
+    <!-- Primaria SEO -->
+    <title>KyrnForge · Ecosistema de Software &amp; Herramientas de Escritorio</title>
+    <meta name="title" content="KyrnForge · Ecosistema de Software &amp; Herramientas de Escritorio" />
+    <meta name="description" content="Ecosistema de aplicaciones de escritorio y herramientas de desarrollo independientes. Software rápido, ligero y de alto rendimiento enfocado en la productividad, diagnóstico de sistemas, empaquetado y entornos locales de ejecución." />
+    <meta name="keywords" content="kyrnforge, herramientas de escritorio, software de desarrollo, devtools, utilidades de productividad, kyrn devdock, kyrnex platform, kpm studio, software independiente, desktop apps, monitor de puertos, empaquetador de software" />
+    <meta name="author" content="KyrnForge" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://kyrnforge.dev/" />
+
+    <!-- Open Graph / Facebook / Discord / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kyrnforge.dev/" />
+    <meta property="og:site_name" content="KyrnForge" />
+    <meta property="og:title" content="KyrnForge · Ecosistema de Software &amp; Herramientas de Escritorio" />
+    <meta property="og:description" content="Ecosistema de aplicaciones de escritorio y herramientas de desarrollo independientes. Software rápido, ligero y de alto rendimiento para maximizar tu productividad." />
+    <meta property="og:image" content="https://kyrnforge.dev/projects/kyrn-devdock.png" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://kyrnforge.dev/" />
+    <meta name="twitter:title" content="KyrnForge · Ecosistema de Software &amp; Herramientas de Escritorio" />
+    <meta name="twitter:description" content="Ecosistema de aplicaciones de escritorio y herramientas de desarrollo independientes. Software rápido, ligero y de alto rendimiento para maximizar tu productividad." />
+    <meta name="twitter:image" content="https://kyrnforge.dev/projects/kyrn-devdock.png" />
+
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Schema.org JSON-LD para Google Search Engine -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://kyrnforge.dev/#organization",
+          "name": "KyrnForge",
+          "url": "https://kyrnforge.dev",
+          "logo": "https://kyrnforge.dev/logo.svg",
+          "description": "Ecosistema independiente de desarrollo de aplicaciones de escritorio, herramientas de productividad, diagnóstico de sistemas y empaquetado de software.",
+          "sameAs": [
+            "https://github.com/devlwte",
+            "https://github.com/devlwte/kyrn-devdock"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://kyrnforge.dev/#website",
+          "url": "https://kyrnforge.dev",
+          "name": "KyrnForge",
+          "publisher": {
+            "@id": "https://kyrnforge.dev/#organization"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Kyrn DevDock",
+          "applicationCategory": "DeveloperApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "url": "https://kyrnforge.dev",
+          "downloadUrl": "https://github.com/devlwte/kyrn-devdock/releases",
+          "description": "Port & Environment Sentinel for Developers. Inspección en tiempo real de sockets TCP/UDP, purga de procesos zombie y gestión de entornos locales."
+        }
+      ]
+    }
+    </script>
   </head>
   <body class="bg-[#07080c] text-zinc-100 selection:bg-cyan-500/20 selection:text-cyan-300">
     <div id="root"></div>

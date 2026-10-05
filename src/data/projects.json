@@ -1,1 +1,59 @@
-[]
+[
+  {
+    "id": "kyrn-devdock",
+    "title": "Kyrn DevDock",
+    "category": "tools",
+    "categoryLabel": "Herramientas Dev & Red Local",
+    "statusLabel": "v1.0.0 Oficial",
+    "badgeColor": "border-emerald-500/40 text-emerald-400 bg-emerald-950/30",
+    "iconImg": "/projects/kyrn-devdock.png",
+    "description": "Centinela de puertos y entornos de desarrollo desarrollado en Rust y Tauri v2. Diagnóstico en tiempo real de sockets TCP/UDP, purga de procesos huérfanos (Zombie Hunter) con terminación segura, dominios locales y sincronización multi-tenant cifrada con Kyrn Cloud.",
+    "tags": [
+      "Port Sentinel",
+      "Network Diagnostics",
+      "Tauri v2",
+      "Rust Core",
+      "DevTools"
+    ],
+    "repoUrl": "https://github.com/devlwte/kyrn-devdock",
+    "downloadUrl": "https://github.com/devlwte/kyrn-devdock/releases",
+    "isFlagship": true
+  },
+  {
+    "id": "kyrnex",
+    "title": "Kyrnex Platform",
+    "category": "tools",
+    "categoryLabel": "Plataforma & Runtime Local",
+    "statusLabel": "v1.0.3 Oficial",
+    "badgeColor": "border-purple-500/40 text-purple-400 bg-purple-950/30",
+    "iconImg": "/projects/kyrnex.png",
+    "description": "Plataforma integral de ejecución y gestión de aplicaciones web locales (Local Web Applications Runtime & Manager Platform). Permite levantar servidores locales instantáneos, orquestar microservicios con DynExpress y probar APIs directamente sin configuraciones engorrosas.",
+    "tags": [
+      "Local Web Runtime",
+      "DynExpress Core",
+      "Manager de Servidores",
+      "DevTools"
+    ],
+    "repoUrl": "https://github.com/devlwte/kyrnex",
+    "downloadUrl": "https://github.com/devlwte/kyrnex/releases",
+    "isFlagship": false
+  },
+  {
+    "id": "kpm",
+    "title": "Krypton Package Manager (KPM)",
+    "category": "tools",
+    "categoryLabel": "Suite de Empaquetado & Compresión",
+    "statusLabel": "v1.0.0 Estable",
+    "badgeColor": "border-cyan-500/40 text-cyan-400 bg-cyan-950/30",
+    "iconImg": "/projects/kpm.png",
+    "description": "Suite moderna de empaquetado y compresión extrema para desarrolladores. Integra compresión Brotli Ultra, empaquetado seguro y optimización de binarios de escritorio.",
+    "tags": [
+      "Brotli Ultra",
+      "Empaquetador",
+      "Compresión",
+      "DevTools"
+    ],
+    "repoUrl": "https://github.com/devlwte/kpm-studio",
+    "isFlagship": false
+  }
+]

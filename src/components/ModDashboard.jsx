@@ -90,6 +90,7 @@ const PROJECT_BADGES = [
 
 const PRESET_ICONS = [
   { name: 'KPM Studio', path: '/projects/kpm.png' },
+  { name: 'Kyrn DevDock', path: '/projects/kyrn-devdock.png' },
   { name: 'Kyrnex Platform', path: '/projects/kyrnex.png' },
   { name: 'PlayWarp Hub', path: '/projects/playwarp.svg' },
   { name: '2DGO Engine', path: '/projects/2dgo.png' },

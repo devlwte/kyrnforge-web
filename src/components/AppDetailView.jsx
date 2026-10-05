@@ -183,11 +183,14 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6 sm:gap-10">
             
             {/* App Icon Container */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl bg-[#0c101c] border border-zinc-700/60 p-4 sm:p-5 flex items-center justify-center flex-shrink-0 shadow-xl shadow-cyan-950/20 group">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl bg-[#0c101c] border border-zinc-700/60 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-xl shadow-cyan-950/20 group">
               <img 
                 src={app.iconImg || '/projects/default-app.svg'} 
                 alt={`${app.title} Icon`}
-                className="w-full h-full object-contain filter drop-shadow group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover filter drop-shadow group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  e.currentTarget.src = "/projects/default-app.svg";
+                }}
               />
             </div>
 
@@ -343,8 +346,15 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
                   className="p-5 rounded-2xl bg-[#080b12] hover:bg-[#0c101a] border border-zinc-800/80 hover:border-zinc-700 transition text-left space-y-3 group"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#0c101c] border border-zinc-800 p-2 flex items-center justify-center flex-shrink-0">
-                      <img src={rel.iconImg || '/projects/default-app.svg'} alt={rel.title} className="w-full h-full object-contain" />
+                    <div className="w-11 h-11 rounded-xl bg-[#0c101c] border border-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <img 
+                        src={rel.iconImg || '/projects/default-app.svg'} 
+                        alt={rel.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
+                        onError={(e) => {
+                          e.currentTarget.src = "/projects/default-app.svg";
+                        }}
+                      />
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-mono text-xs font-bold text-zinc-200 truncate group-hover:text-cyan-300 transition-colors">

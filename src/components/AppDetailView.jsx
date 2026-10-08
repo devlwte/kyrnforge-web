@@ -25,6 +25,8 @@ import {
   ArrowLeft 
 } from 'lucide-react';
 
+import DEFAULT_APPS from '../data/apps.json';
+
 const ICON_MAP = {
   Shield,
   Layers,
@@ -48,33 +50,58 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
 
   // Search app in availableApps first, then in projects catalog (memoized)
   const app = useMemo(() => {
+    let resolvedApp = null;
     const appInCarousel = availableApps.find(a => a.id === appId || (a.id && a.id.toLowerCase() === (appId || "").toLowerCase()));
-    if (appInCarousel) return appInCarousel;
+    if (appInCarousel) {
+      resolvedApp = appInCarousel;
+    } else {
+      const projectInCatalog = projects.find(p => p.id === appId || (p.id && p.id.toLowerCase() === (appId || "").toLowerCase()));
+      if (projectInCatalog) {
+        resolvedApp = {
+          id: projectInCatalog.id,
+          title: projectInCatalog.title,
+          shortName: projectInCatalog.title,
+          category: projectInCatalog.categoryLabel || 'Herramienta de Escritorio',
+          badge: projectInCatalog.statusLabel || 'v1.0.0 Oficial',
+          badgeColor: projectInCatalog.badgeColor || 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
+          description: projectInCatalog.description,
+          iconImg: projectInCatalog.iconImg || '/projects/default-app.svg',
+          downloadUrl: projectInCatalog.downloadUrl || (projectInCatalog.repoUrl ? `${projectInCatalog.repoUrl}/releases` : null),
+          repoUrl: projectInCatalog.repoUrl || null,
+          features: (projectInCatalog.tags || []).map(tag => ({
+            label: typeof tag === 'object' ? tag.label : tag,
+            description: typeof tag === 'object' && tag.description ? tag.description : '',
+            iconName: typeof tag === 'object' && tag.iconName ? tag.iconName : 'Zap',
+            color: typeof tag === 'object' && tag.color ? tag.color : 'text-cyan-400'
+          })),
+          glowClass: 'glow-emerald',
+          themeBorder: 'border-emerald-500/40',
+          btnBg: 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/25',
+          accentText: 'text-emerald-400'
+        };
+      }
+    }
 
-    const projectInCatalog = projects.find(p => p.id === appId || (p.id && p.id.toLowerCase() === (appId || "").toLowerCase()));
-    if (!projectInCatalog) return null;
+    if (!resolvedApp) return null;
+
+    // Enhance features with fallback descriptions from DEFAULT_APPS if empty
+    const defaultApp = DEFAULT_APPS.find(d => d.id === resolvedApp.id || (d.id && d.id.toLowerCase() === (resolvedApp.id || "").toLowerCase()));
+    const enrichedFeatures = (resolvedApp.features || []).map(feat => {
+      const label = typeof feat === 'object' ? feat.label : feat;
+      const currentDesc = typeof feat === 'object' && feat.description ? String(feat.description).trim() : '';
+      const defaultFeat = defaultApp?.features?.find(df => (df.label || '').toLowerCase() === (label || '').toLowerCase());
+      const description = currentDesc || (defaultFeat?.description || '');
+      return {
+        label,
+        description,
+        iconName: (typeof feat === 'object' && feat.iconName) || defaultFeat?.iconName || 'Zap',
+        color: (typeof feat === 'object' && feat.color) || defaultFeat?.color || 'text-cyan-400'
+      };
+    });
 
     return {
-      id: projectInCatalog.id,
-      title: projectInCatalog.title,
-      shortName: projectInCatalog.title,
-      category: projectInCatalog.categoryLabel || 'Herramienta de Escritorio',
-      badge: projectInCatalog.statusLabel || 'v1.0.0 Oficial',
-      badgeColor: projectInCatalog.badgeColor || 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
-      description: projectInCatalog.description,
-      iconImg: projectInCatalog.iconImg || '/projects/default-app.svg',
-      downloadUrl: projectInCatalog.downloadUrl || (projectInCatalog.repoUrl ? `${projectInCatalog.repoUrl}/releases` : null),
-      repoUrl: projectInCatalog.repoUrl || null,
-      features: (projectInCatalog.tags || []).map(tag => ({
-        label: typeof tag === 'object' ? tag.label : tag,
-        description: typeof tag === 'object' && tag.description ? tag.description : '',
-        iconName: typeof tag === 'object' && tag.iconName ? tag.iconName : 'Zap',
-        color: typeof tag === 'object' && tag.color ? tag.color : 'text-cyan-400'
-      })),
-      glowClass: 'glow-emerald',
-      themeBorder: 'border-emerald-500/40',
-      btnBg: 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/25',
-      accentText: 'text-emerald-400'
+      ...resolvedApp,
+      features: enrichedFeatures
     };
   }, [appId, availableApps, projects]);
 

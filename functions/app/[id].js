@@ -29,13 +29,22 @@ export async function onRequestGet(context) {
       projects = (await kv.get("projects", { type: "json" })) || [];
     }
 
-    if ((!apps || !apps.length) && (!projects || !projects.length) && env?.ASSETS) {
-      const [resApps, resProjects] = await Promise.all([
-        env.ASSETS.fetch(new URL('/data/apps.json', request.url)).then(r => r.ok ? r.json() : []).catch(() => []),
-        env.ASSETS.fetch(new URL('/data/projects.json', request.url)).then(r => r.ok ? r.json() : []).catch(() => [])
-      ]);
-      apps = resApps || [];
-      projects = resProjects || [];
+    let staticApps = [];
+    if (env?.ASSETS) {
+      try {
+        const sRes = await env.ASSETS.fetch(new URL('/data/apps.json', request.url));
+        if (sRes.ok) staticApps = await sRes.json();
+      } catch (_) {}
+    }
+
+    if ((!apps || !apps.length) && (!projects || !projects.length)) {
+      apps = staticApps || [];
+      if (env?.ASSETS) {
+        try {
+          const resProjects = await env.ASSETS.fetch(new URL('/data/projects.json', request.url));
+          if (resProjects.ok) projects = await resProjects.json();
+        } catch (_) {}
+      }
     }
 
     // 3. Locate target app or project
@@ -93,9 +102,11 @@ export async function onRequestGet(context) {
     };
 
     // Pre-rendered semantic HTML for Googlebot and instant initial paint
+    const staticApp = (staticApps || []).find(a => (a.id || "").toLowerCase() === appId);
     const featuresList = (app.features || []).map(f => {
       const label = typeof f === 'object' ? f.label : f;
-      const desc = typeof f === 'object' && f.description ? String(f.description).trim() : '';
+      const staticFeat = staticApp?.features?.find(sf => (sf.label || '').toLowerCase() === (label || '').toLowerCase());
+      const desc = typeof f === 'object' && f.description ? String(f.description).trim() : (staticFeat?.description || '');
       return `<li class="p-4 rounded-xl bg-[#080b12] border border-zinc-800 text-zinc-300 text-xs font-mono space-y-1">
         <div class="flex items-center space-x-2 font-bold text-zinc-100">
           <span class="text-cyan-400">✓</span>

@@ -49,10 +49,6 @@ const ICON_MAP = {
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
-  const [selectedEndpoint, setSelectedEndpoint] = useState('status');
-  const [apiResponse, setApiResponse] = useState(null);
-  const [isLoadingApi, setIsLoadingApi] = useState(false);
-  const [latencyMs, setLatencyMs] = useState(null);
   const [projectFilter, setProjectFilter] = useState('all');
   const [currentAppIndex, setCurrentAppIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -224,46 +220,8 @@ export default function App() {
   const navItems = [
     { id: 'proyectos', label: 'PROYECTOS', href: '#proyectos' },
     { id: 'descargas', label: 'DESCARGAS', href: '#descargas' },
-    { id: 'api', label: 'API GATEWAY', href: '#api' },
     { id: 'github', label: 'GITHUB', href: 'https://github.com/devlwte', isExternal: true }
   ];
-
-  // API Gateway Tester
-  const fetchLiveApi = async (endpoint = selectedEndpoint) => {
-    setIsLoadingApi(true);
-    const start = performance.now();
-    try {
-      let res;
-      if (endpoint === 'status') {
-        res = await fetch('/api/v1/status');
-      } else if (endpoint === 'health') {
-        res = await fetch('/api/v1/health');
-      } else if (endpoint === 'auth') {
-        res = await fetch('/api/v1/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey: 'demo_guest_key', clientApp: 'KyrnForgeWebClient' })
-        });
-      }
-      const data = await res.json();
-      setLatencyMs(Math.round(performance.now() - start));
-      setApiResponse(data);
-    } catch {
-      setLatencyMs(Math.round(performance.now() - start));
-      setApiResponse({
-        status: "operational",
-        service: `KyrnForge API (${endpoint.toUpperCase()})`,
-        version: "1.0.0",
-        gateway: "Cloudflare Edge Serverless",
-        node: "LOCAL-EDGE",
-        timestamp: new Date().toISOString(),
-        uptime: "99.99%",
-        note: "Simulación de respuesta local"
-      });
-    } finally {
-      setIsLoadingApi(false);
-    }
-  };
 
   // Derive dynamic category filters from existing projects to avoid empty/dead tabs
   const availableCategories = Array.from(new Set((projects || []).map(p => p.categoryLabel || p.category).filter(Boolean)));
@@ -824,84 +782,6 @@ export default function App() {
               <p className="text-xs font-mono text-zinc-400">Sincronizando catálogo de proyectos desde Cloudflare KV...</p>
             </div>
           )}
-        </section>
-
-        {/* Live Interactive API Gateway Console */}
-        <section id="api" className="space-y-6 scroll-mt-24">
-          <div className="border-b border-zinc-900 pb-4">
-            <div className="text-xs font-mono text-cyan-400 tracking-wider">GATEWAY SERVERLESS</div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-100 mt-1">Consola de API en Tiempo Real</h2>
-            <p className="text-xs text-zinc-400 mt-1">
-              Prueba los endpoints serverless de Cloudflare que alimentan las verificaciones de estado y autenticación de nuestras herramientas.
-            </p>
-          </div>
-
-          <div className="bg-[#090b10] border border-zinc-800 rounded-xl p-4 sm:p-6 space-y-4 font-mono">
-            {/* Endpoint Selector Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-900 pb-4">
-              <div className="flex items-center space-x-2 overflow-x-auto max-w-full">
-                <span className="text-xs text-zinc-500 font-bold flex-shrink-0">MÉTODO:</span>
-                <div className="flex space-x-1 bg-[#050608] p-1 rounded-md border border-zinc-900 text-xs flex-shrink-0">
-                  <button
-                    onClick={() => { setSelectedEndpoint('status'); fetchLiveApi('status'); }}
-                    className={`px-2.5 py-1 rounded transition ${selectedEndpoint === 'status' ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40' : 'text-zinc-400 hover:text-zinc-200'}`}
-                  >
-                    GET /status
-                  </button>
-                  <button
-                    onClick={() => { setSelectedEndpoint('health'); fetchLiveApi('health'); }}
-                    className={`px-2.5 py-1 rounded transition ${selectedEndpoint === 'health' ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40' : 'text-zinc-400 hover:text-zinc-200'}`}
-                  >
-                    GET /health
-                  </button>
-                  <button
-                    onClick={() => { setSelectedEndpoint('auth'); fetchLiveApi('auth'); }}
-                    className={`px-2.5 py-1 rounded transition ${selectedEndpoint === 'auth' ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40' : 'text-zinc-400 hover:text-zinc-200'}`}
-                  >
-                    POST /auth
-                  </button>
-                </div>
-              </div>
-
-              <button
-                onClick={() => fetchLiveApi(selectedEndpoint)}
-                disabled={isLoadingApi}
-                className="w-full sm:w-auto justify-center px-4 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition flex items-center space-x-2 border border-zinc-700 active:scale-95"
-              >
-                <Activity className={`w-3.5 h-3.5 text-cyan-400 ${isLoadingApi ? 'animate-spin' : ''}`} />
-                <span>{isLoadingApi ? 'CONSULTANDO...' : 'CONSULTAR EN VIVO'}</span>
-              </button>
-            </div>
-
-            {/* URL Display */}
-            <div className="flex items-center space-x-2 text-xs text-zinc-400 bg-[#050608] px-3 py-2 rounded border border-zinc-900 overflow-x-auto max-w-full">
-              <span className="text-emerald-400 font-bold flex-shrink-0">{selectedEndpoint === 'auth' ? 'POST' : 'GET'}</span>
-              <span className="text-zinc-200 truncate">https://kyrnforge.dev/api/v1/{selectedEndpoint}</span>
-            </div>
-
-            {/* Terminal Window */}
-            <div className="bg-[#030406] border border-zinc-900 rounded-lg p-4 text-xs overflow-x-auto min-h-[160px] flex flex-col justify-between">
-              {apiResponse ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-zinc-500 border-b border-zinc-900/80 pb-1.5">
-                    <span className="flex items-center space-x-1.5 text-emerald-400 font-bold">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>HTTP 200 OK</span>
-                    </span>
-                    {latencyMs && <span className="text-cyan-400">Latencia Edge: {latencyMs} ms</span>}
-                  </div>
-                  <pre className="text-emerald-400 text-xs leading-relaxed overflow-x-auto">
-                    {JSON.stringify(apiResponse, null, 2)}
-                  </pre>
-                </div>
-              ) : (
-                <div className="text-zinc-600 flex flex-col items-center justify-center py-8 space-y-1.5 text-center">
-                  <Terminal className="w-6 h-6 text-zinc-700" />
-                  <span>Haz clic en "CONSULTAR EN VIVO" para realizar una petición real a la infraestructura de Cloudflare.</span>
-                </div>
-              )}
-            </div>
-          </div>
         </section>
 
       </main>

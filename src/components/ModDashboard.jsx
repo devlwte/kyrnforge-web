@@ -35,7 +35,8 @@ import {
   Save,
   LayoutGrid,
   RefreshCw,
-  Search
+  Search,
+  Activity
 } from 'lucide-react';
 import { initialAvailableApps } from '../data/defaultApps';
 import { initialProjects, initialSiteSettings } from '../data/defaultSiteData';
@@ -287,6 +288,64 @@ export default function ModDashboard({ onNavigateHome }) {
   const importFileInputRef = React.useRef(null);
   const [copiedExport, setCopiedExport] = useState(false);
   const [saveSuccessToast, setSaveSuccessToast] = useState('');
+
+  // --- STATE 5: Edge API Gateway Console (Admin Only) ---
+  const [apiEndpoint, setApiEndpoint] = useState('status');
+  const [apiResponse, setApiResponse] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiLatency, setApiLatency] = useState(null);
+  const [apiIncludeAuth, setApiIncludeAuth] = useState(true);
+  const [copiedApiResponse, setCopiedApiResponse] = useState(false);
+
+  const executeApiRequest = async (endpoint = apiEndpoint) => {
+    setApiLoading(true);
+    const start = performance.now();
+    try {
+      const targetUrl = `/api/v1/${endpoint}`;
+      const options = {
+        cache: 'no-store',
+        headers: {}
+      };
+      if (apiIncludeAuth) {
+        options.headers['Authorization'] = `Bearer ${passwordInput || DEFAULT_PASS}`;
+        options.headers['x-admin-key'] = passwordInput || DEFAULT_PASS;
+      }
+
+      if (endpoint === 'auth') {
+        options.method = 'POST';
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify({
+          apiKey: passwordInput || DEFAULT_PASS,
+          clientApp: 'KyrnForgeModConsole',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        options.method = 'GET';
+      }
+
+      const res = await fetch(targetUrl, options);
+      const data = await res.json().catch(err => ({ error: "Respuesta no JSON", details: err.message }));
+      setApiLatency(Math.round(performance.now() - start));
+      setApiResponse({
+        status: res.status,
+        statusText: res.statusText || (res.ok ? 'OK' : 'Error'),
+        headers: {
+          contentType: res.headers.get('content-type') || 'application/json',
+          cfRay: res.headers.get('cf-ray') || 'Local Dev'
+        },
+        data
+      });
+    } catch (err) {
+      setApiLatency(Math.round(performance.now() - start));
+      setApiResponse({
+        status: 500,
+        statusText: 'Network / Edge Failure',
+        data: { error: err.message }
+      });
+    } finally {
+      setApiLoading(false);
+    }
+  };
 
   const handleImportFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -1217,6 +1276,21 @@ export default function ModDashboard({ onNavigateHome }) {
               <FileDown className="w-3.5 h-3.5 flex-shrink-0" />
               <span><span className="hidden sm:inline">4. Respaldo & Exportación</span><span className="sm:hidden">4. Respaldo</span></span>
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('api');
+                if (!apiResponse) executeApiRequest('status');
+              }}
+              className={`px-3 sm:px-3.5 py-2 rounded-lg transition flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'api'
+                  ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50 border border-transparent'
+              }`}
+            >
+              <Terminal className="w-3.5 h-3.5 flex-shrink-0" />
+              <span><span className="hidden sm:inline">5. Consola API Edge</span><span className="sm:hidden">5. API</span></span>
+            </button>
           </div>
         </div>
       </header>
@@ -1965,6 +2039,167 @@ export default function ModDashboard({ onNavigateHome }) {
                     <strong className="text-zinc-100 block">Sincronización en Tiempo Real</strong>
                     <span className="text-[11px] text-zinc-500">Cada cambio o respaldo restaurado se refleja al instante en todos los celulares y computadoras del mundo.</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 5: API GATEWAY CONSOLE & EDGE DIAGNOSTICS (ADMIN / MOD ONLY)          */}
+        {/* ========================================================================= */}
+        {activeTab === 'api' && (
+          <section className="space-y-6 animate-fadeIn">
+            {/* Action Bar Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[#0a0c12] border border-cyan-500/30">
+              <div>
+                <div className="text-xs font-mono text-cyan-400 flex items-center space-x-1.5">
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>HERRAMIENTA PRIVADA · CONSOLA SERVERLESS EDGE</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-100 mt-0.5">
+                  Diagnóstico y Pruebas de API en Tiempo Real
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1 max-w-xl">
+                  Prueba de forma segura los endpoints de Cloudflare Functions que dan servicio al ecosistema y a las aplicaciones de escritorio.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => executeApiRequest(apiEndpoint)}
+                  disabled={apiLoading}
+                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-cyan-500/25 active:scale-95 disabled:opacity-50"
+                >
+                  <Activity className={`w-3.5 h-3.5 ${apiLoading ? 'animate-spin' : ''}`} />
+                  <span>{apiLoading ? 'CONSULTANDO...' : 'EJECUTAR PETICIÓN'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Console Control Panel */}
+            <div className="bg-[#090b10] border border-zinc-800 rounded-2xl p-5 sm:p-6 space-y-5 font-mono">
+              {/* Endpoint Selector Tabs */}
+              <div className="space-y-2">
+                <span className="text-xs text-zinc-400 font-bold block">1. SELECCIONA EL ENDPOINT A EVALUAR:</span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'status', method: 'GET', label: '/api/v1/status (Estado Global & Uptime)' },
+                    { id: 'health', method: 'GET', label: '/api/v1/health (Healthcheck Worker)' },
+                    { id: 'content', method: 'GET', label: '/api/v1/content (Inspección Cloudflare KV)' },
+                    { id: 'apps', method: 'GET', label: '/api/v1/apps (Catálogo de Apps JSON)' },
+                    { id: 'auth', method: 'POST', label: '/api/v1/auth (Test Token Autenticación)' }
+                  ].map((ep) => (
+                    <button
+                      key={ep.id}
+                      onClick={() => {
+                        setApiEndpoint(ep.id);
+                        executeApiRequest(ep.id);
+                      }}
+                      className={`px-3 py-2 rounded-lg text-xs font-mono transition flex items-center space-x-2 border ${
+                        apiEndpoint === ep.id
+                          ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/50 shadow-sm'
+                          : 'bg-[#06080d] text-zinc-400 border-zinc-900 hover:text-zinc-200 hover:border-zinc-800'
+                      }`}
+                    >
+                      <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                        ep.method === 'POST' ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' : 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {ep.method}
+                      </span>
+                      <span>{ep.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Security & Authorization Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#06080d] border border-zinc-900 text-xs">
+                <label className="flex items-center space-x-2.5 cursor-pointer select-none text-zinc-300">
+                  <input
+                    type="checkbox"
+                    checked={apiIncludeAuth}
+                    onChange={(e) => setApiIncludeAuth(e.target.checked)}
+                    className="w-4 h-4 rounded bg-zinc-900 border-zinc-700 text-cyan-500 focus:ring-0"
+                  />
+                  <span>Incluir cabeceras de autorización de Administrador (<code>Authorization: Bearer</code>)</span>
+                </label>
+
+                <div className="flex items-center space-x-2 text-[11px] text-zinc-500">
+                  <Key className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Clave en uso: <strong className="text-zinc-300">ADMINISTRADOR ACTIVO</strong></span>
+                </div>
+              </div>
+
+              {/* URL Display */}
+              <div className="flex items-center space-x-2.5 text-xs text-zinc-400 bg-[#050608] px-3.5 py-2.5 rounded-xl border border-zinc-900 overflow-x-auto">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  apiEndpoint === 'auth' ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40' : 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
+                }`}>
+                  {apiEndpoint === 'auth' ? 'POST' : 'GET'}
+                </span>
+                <span className="text-zinc-200 truncate font-bold">
+                  https://kyrnforge.dev/api/v1/{apiEndpoint}
+                </span>
+              </div>
+
+              {/* Terminal Window */}
+              <div className="bg-[#030406] border border-zinc-900 rounded-xl p-4 sm:p-5 text-xs overflow-hidden flex flex-col justify-between space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-900/90 pb-3 text-[11px]">
+                  <div className="flex items-center space-x-3">
+                    {apiResponse ? (
+                      <span className={`flex items-center space-x-1.5 font-bold ${
+                        apiResponse.status >= 200 && apiResponse.status < 300 ? 'text-emerald-400' : 'text-rose-400'
+                      }`}>
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>HTTP {apiResponse.status} {apiResponse.statusText}</span>
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500 flex items-center space-x-1.5">
+                        <Terminal className="w-3.5 h-3.5" />
+                        <span>Esperando ejecución...</span>
+                      </span>
+                    )}
+
+                    {apiLatency !== null && (
+                      <span className="text-cyan-400 font-bold px-2 py-0.5 rounded bg-cyan-950/40 border border-cyan-500/30">
+                        Latencia Edge: {apiLatency} ms
+                      </span>
+                    )}
+
+                    {apiResponse?.headers?.cfRay && (
+                      <span className="text-zinc-500 hidden md:inline">
+                        CF-Ray: {apiResponse.headers.cfRay}
+                      </span>
+                    )}
+                  </div>
+
+                  {apiResponse && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(JSON.stringify(apiResponse.data || apiResponse, null, 2));
+                        setCopiedApiResponse(true);
+                        setTimeout(() => setCopiedApiResponse(false), 2000);
+                      }}
+                      className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[10px] font-mono transition flex items-center space-x-1.5"
+                    >
+                      {copiedApiResponse ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-zinc-500" />}
+                      <span>{copiedApiResponse ? '¡Copiado!' : 'Copiar JSON'}</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="min-h-[220px] max-h-[460px] overflow-auto modal-scroll rounded-lg bg-[#010204] p-3.5 border border-zinc-900/70">
+                  {apiResponse ? (
+                    <pre className="text-emerald-400 text-xs leading-relaxed whitespace-pre-wrap font-mono">
+                      {JSON.stringify(apiResponse.data || apiResponse, null, 2)}
+                    </pre>
+                  ) : (
+                    <div className="h-44 flex flex-col items-center justify-center text-zinc-600 space-y-2 text-center">
+                      <Terminal className="w-8 h-8 text-zinc-700" />
+                      <span>Haz clic en "EJECUTAR PETICIÓN" o selecciona cualquier endpoint para inspeccionar la respuesta serverless.</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

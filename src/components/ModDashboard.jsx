@@ -278,6 +278,7 @@ export default function ModDashboard({ onNavigateHome }) {
 
   const [editingProject, setEditingProject] = useState(null);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [quickProjectTagInput, setQuickProjectTagInput] = useState('');
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -906,7 +907,79 @@ export default function ModDashboard({ onNavigateHome }) {
     saveApps(updated);
   };
 
-  // --- PROJECT CRUD OPERATIONS ---
+  // --- PROJECT CRUD & TAG OPERATIONS ---
+  const normalizeProjectTags = (tags) => {
+    if (!tags) return [];
+    const list = Array.isArray(tags) ? tags : String(tags).split(',').map(s => s.trim()).filter(Boolean);
+    return list.map(t => {
+      if (typeof t === 'object' && t !== null) {
+        return {
+          label: t.label || t.name || '',
+          description: t.description || '',
+          iconName: t.iconName || 'Zap',
+          color: t.color || 'text-cyan-400'
+        };
+      }
+      return {
+        label: String(t).trim(),
+        description: '',
+        iconName: 'Zap',
+        color: 'text-cyan-400'
+      };
+    }).filter(t => t.label);
+  };
+
+  const handleAddProjectTag = () => {
+    if (!editingProject) return;
+    const currentTags = normalizeProjectTags(editingProject.tags);
+    const updatedTags = [
+      ...currentTags,
+      { label: 'Nuevo Tag', description: '', iconName: 'Zap', color: 'text-cyan-400' }
+    ];
+    setEditingProject({ ...editingProject, tags: updatedTags });
+  };
+
+  const handleUpdateProjectTag = (index, field, value) => {
+    if (!editingProject) return;
+    const currentTags = normalizeProjectTags(editingProject.tags);
+    const updated = [...currentTags];
+    if (updated[index]) {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    setEditingProject({ ...editingProject, tags: updated });
+  };
+
+  const handleRemoveProjectTag = (index) => {
+    if (!editingProject) return;
+    const currentTags = normalizeProjectTags(editingProject.tags);
+    const updated = currentTags.filter((_, i) => i !== index);
+    setEditingProject({ ...editingProject, tags: updated });
+  };
+
+  const handleAddQuickProjectTags = (inputStr) => {
+    if (!editingProject || !inputStr || !inputStr.trim()) return;
+    const newItems = inputStr
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    
+    if (newItems.length === 0) return;
+
+    const currentTags = normalizeProjectTags(editingProject.tags);
+    const addedTags = newItems.map(tagText => ({
+      label: tagText,
+      description: '',
+      iconName: 'Zap',
+      color: 'text-cyan-400'
+    }));
+
+    setEditingProject({
+      ...editingProject,
+      tags: [...currentTags, ...addedTags]
+    });
+    setQuickProjectTagInput('');
+  };
+
   const handleOpenAddProject = () => {
     setEditingProject({
       id: `proj-${Date.now().toString(36)}`,
@@ -921,16 +994,24 @@ export default function ModDashboard({ onNavigateHome }) {
       iconName: 'Gamepad2',
       iconColor: 'text-amber-400 bg-amber-950/40 border-amber-500/30',
       description: 'Breve sinopsis del proyecto, objetivos y estado actual de la arquitectura.',
-      tags: ['Videojuegos', 'Nativo', 'En Desarrollo'],
+      tags: [
+        { label: 'Videojuegos', description: '', iconName: 'Gamepad2', color: 'text-amber-400' },
+        { label: 'Nativo', description: '', iconName: 'Cpu', color: 'text-cyan-400' },
+        { label: 'En Desarrollo', description: '', iconName: 'Zap', color: 'text-emerald-400' }
+      ],
       downloadUrl: '',
       repoUrl: 'https://github.com/devlwte',
       isFlagship: false
     });
+    setQuickProjectTagInput('');
     setIsProjectModalOpen(true);
   };
 
   const handleOpenEditProject = (project) => {
-    setEditingProject(JSON.parse(JSON.stringify(project)));
+    const clone = JSON.parse(JSON.stringify(project));
+    clone.tags = normalizeProjectTags(clone.tags);
+    setEditingProject(clone);
+    setQuickProjectTagInput('');
     setIsProjectModalOpen(true);
   };
 
@@ -938,17 +1019,39 @@ export default function ModDashboard({ onNavigateHome }) {
     e.preventDefault();
     if (!editingProject.id || !editingProject.title) return;
 
-    const exists = projects.some(p => p.id === editingProject.id);
+    let finalTags = normalizeProjectTags(editingProject.tags);
+    if (quickProjectTagInput && quickProjectTagInput.trim()) {
+      const extra = quickProjectTagInput
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(label => ({
+          label,
+          description: '',
+          iconName: 'Zap',
+          color: 'text-cyan-400'
+        }));
+      finalTags = [...finalTags, ...extra];
+    }
+
+    const projectToSave = {
+      ...editingProject,
+      tags: finalTags
+    };
+
+    const exists = projects.some(p => p.id === projectToSave.id);
     let updated;
     if (exists) {
-      updated = projects.map(p => p.id === editingProject.id ? editingProject : p);
+      updated = projects.map(p => p.id === projectToSave.id ? projectToSave : p);
     } else {
-      updated = [...projects, editingProject];
+      updated = [...projects, projectToSave];
     }
 
     saveProjects(updated);
     setIsProjectModalOpen(false);
     setEditingProject(null);
+    setQuickProjectTagInput('');
+    showToast(`✓ Proyecto "${projectToSave.title}" guardado correctamente`);
   };
 
   const handleDeleteProject = (id) => {
@@ -1690,7 +1793,7 @@ export default function ModDashboard({ onNavigateHome }) {
                       <div className="flex flex-wrap gap-1 font-mono text-[9px] pt-0.5">
                         {proj.tags && proj.tags.map((t, idx) => (
                           <span key={idx} className="px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
-                            {t}
+                            {typeof t === 'object' ? (t.label || t.name || '') : t}
                           </span>
                         ))}
                       </div>
@@ -2883,18 +2986,116 @@ export default function ModDashboard({ onNavigateHome }) {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-mono text-zinc-400">Etiquetas / Tags (separados por coma)</label>
-                <input
-                  type="text"
-                  value={Array.isArray(editingProject.tags) ? editingProject.tags.join(', ') : ''}
-                  onChange={(e) => setEditingProject({
-                    ...editingProject,
-                    tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-                  })}
-                  placeholder="Game Launcher, Catálogo Multi-Tienda, 100% Legal"
-                  className="w-full bg-[#050608] border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200"
-                />
+              {/* Project Tags & Features Manager with Optional Descriptions and Comma-split */}
+              <div className="space-y-3 p-4 rounded-xl bg-zinc-950/60 border border-zinc-800/90">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-mono font-bold text-zinc-200 flex items-center space-x-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Etiquetas & Capacidades Técnicas del Proyecto</span>
+                    </label>
+                    <p className="text-[11px] text-zinc-500 font-sans">
+                      Agrega tags con el botón o escríbelos separados por comas. Cada tag puede incluir su propia descripción técnica opcional.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddProjectTag}
+                    className="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-mono transition flex items-center self-start sm:self-auto space-x-1"
+                    title="Añadir una nueva capacidad técnica a este proyecto"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>+ Tag</span>
+                  </button>
+                </div>
+
+                {/* Quick Add with Comma Separator & Enter Key */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={quickProjectTagInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val.includes(',')) {
+                        handleAddQuickProjectTags(val);
+                      } else {
+                        setQuickProjectTagInput(val);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddQuickProjectTags(quickProjectTagInput);
+                      }
+                    }}
+                    placeholder="Escribe tags separados por comas (ej: Motor Gráfico, Cero Latencia) y pulsa coma o Enter..."
+                    className="flex-1 bg-[#050608] border border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddQuickProjectTags(quickProjectTagInput)}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-mono text-zinc-300 hover:text-white transition flex items-center space-x-1"
+                  >
+                    <span>Añadir</span>
+                  </button>
+                </div>
+
+                {/* List of Structured Tags with Descriptions and Atomic Delete */}
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {(!editingProject.tags || normalizeProjectTags(editingProject.tags).length === 0) && (
+                    <div className="text-xs font-mono text-zinc-500 p-3 border border-dashed border-zinc-800 rounded-lg text-center">
+                      No hay tags configurados. Escribe arriba separados por comas o pulsa "+ Tag".
+                    </div>
+                  )}
+                  {normalizeProjectTags(editingProject.tags).map((feat, idx) => (
+                    <div key={idx} className="p-2.5 rounded-lg bg-[#050608] border border-zinc-800 flex flex-col gap-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <input
+                          type="text"
+                          value={feat.label}
+                          onChange={(e) => handleUpdateProjectTag(idx, 'label', e.target.value)}
+                          placeholder="Nombre del Tag (ej: Port Sentinel)"
+                          className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded px-2.5 py-1 text-xs font-mono text-zinc-200"
+                        />
+                        <div className="flex items-center space-x-1.5">
+                          <select
+                            value={feat.iconName || 'Zap'}
+                            onChange={(e) => handleUpdateProjectTag(idx, 'iconName', e.target.value)}
+                            className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                          >
+                            {AVAILABLE_FEATURE_ICONS.map(icon => (
+                              <option key={icon} value={icon}>{icon}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={feat.color || 'text-cyan-400'}
+                            onChange={(e) => handleUpdateProjectTag(idx, 'color', e.target.value)}
+                            className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                          >
+                            {AVAILABLE_FEATURE_COLORS.map(col => (
+                              <option key={col.value} value={col.value}>{col.label}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProjectTag(idx)}
+                            className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 transition"
+                            title="Eliminar este tag y su descripción"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={feat.description || ''}
+                        onChange={(e) => handleUpdateProjectTag(idx, 'description', e.target.value)}
+                        placeholder="Descripción opcional (si está vacía, solo se muestra el título en la ficha)"
+                        className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded px-2.5 py-1 text-[11px] font-sans text-zinc-300 placeholder:text-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

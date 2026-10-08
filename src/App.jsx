@@ -741,7 +741,7 @@ export default function App() {
                     <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
                       {p.tags && p.tags.map((t, idx) => (
                         <span key={idx} className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
-                          {t}
+                          {typeof t === 'object' ? (t.label || t.name || '') : t}
                         </span>
                       ))}
                     </div>

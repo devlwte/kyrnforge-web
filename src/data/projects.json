@@ -9,11 +9,36 @@
     "iconImg": "/projects/kyrn-devdock.png",
     "description": "Centinela de puertos y entornos de desarrollo desarrollado en Rust y Tauri v2. Diagnóstico en tiempo real de sockets TCP/UDP, purga de procesos huérfanos (Zombie Hunter) con terminación segura, dominios locales y sincronización multi-tenant cifrada con Kyrn Cloud.",
     "tags": [
-      "Port Sentinel",
-      "Network Diagnostics",
-      "Tauri v2",
-      "Rust Core",
-      "DevTools"
+      {
+        "label": "Port Sentinel",
+        "description": "Centinela activo de sockets TCP/UDP con monitoreo continuo en segundo plano.",
+        "iconName": "Zap",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Network Diagnostics",
+        "description": "Inspección detallada del tráfico local, interfaces de red y puertos abiertos en tiempo real.",
+        "iconName": "Activity",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Tauri v2",
+        "description": "Arquitectura híbrida ultraligera para escritorio con interfaz web moderna.",
+        "iconName": "Cpu",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Rust Core",
+        "description": "Rendimiento nativo y seguridad de memoria con bajísimo consumo de recursos.",
+        "iconName": "Cpu",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "DevTools",
+        "description": "Herramientas integradas para desarrolladores de software y DevOps.",
+        "iconName": "Terminal",
+        "color": "text-cyan-400"
+      }
     ],
     "repoUrl": "https://github.com/devlwte/kyrn-devdock",
     "downloadUrl": "https://github.com/devlwte/kyrn-devdock/releases",
@@ -29,10 +54,30 @@
     "iconImg": "/projects/kyrnex.png",
     "description": "Plataforma integral de ejecución y gestión de aplicaciones web locales (Local Web Applications Runtime & Manager Platform). Permite levantar servidores locales instantáneos, orquestar microservicios con DynExpress y probar APIs directamente sin configuraciones engorrosas.",
     "tags": [
-      "Local Web Runtime",
-      "DynExpress Core",
-      "Manager de Servidores",
-      "DevTools"
+      {
+        "label": "Local Web Runtime",
+        "description": "Entorno ligero para ejecutar y desplegar aplicaciones web en local.",
+        "iconName": "Server",
+        "color": "text-purple-400"
+      },
+      {
+        "label": "DynExpress Core",
+        "description": "Motor interno para orquestar microservicios y APIs locales al instante.",
+        "iconName": "Layers",
+        "color": "text-purple-400"
+      },
+      {
+        "label": "Manager de Servidores",
+        "description": "Panel para inicializar y monitorear múltiples instancias de servidores.",
+        "iconName": "Zap",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "DevTools",
+        "description": "Utilidades de desarrollo rápido sin configuraciones pesadas.",
+        "iconName": "Terminal",
+        "color": "text-cyan-400"
+      }
     ],
     "repoUrl": "https://github.com/devlwte/kyrnex",
     "downloadUrl": "https://github.com/devlwte/kyrnex/releases",
@@ -48,10 +93,30 @@
     "iconImg": "/projects/kpm.png",
     "description": "Suite moderna de empaquetado y compresión extrema para desarrolladores. Integra compresión Brotli Ultra, empaquetado seguro y optimización de binarios de escritorio.",
     "tags": [
-      "Brotli Ultra",
-      "Empaquetador",
-      "Compresión",
-      "DevTools"
+      {
+        "label": "Brotli Ultra",
+        "description": "Compresión extrema para reducción masiva de tamaño en binarios e imágenes.",
+        "iconName": "Layers",
+        "color": "text-emerald-400"
+      },
+      {
+        "label": "Empaquetador",
+        "description": "Suite de empaquetado seguro y distribución de software.",
+        "iconName": "Package",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Compresión",
+        "description": "Algoritmos avanzados con ratios optimizados para Windows.",
+        "iconName": "Shield",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "DevTools",
+        "description": "Herramientas CLI y gráficas para flujo de trabajo de empaquetado.",
+        "iconName": "Terminal",
+        "color": "text-purple-400"
+      }
     ],
     "repoUrl": "https://github.com/devlwte/kpm-studio",
     "isFlagship": false

@@ -22,10 +22,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  Link2
 } from 'lucide-react';
 import ModDashboard from './components/ModDashboard';
 import AppDetailView from './components/AppDetailView';
+import KyrnLinksView from './components/KyrnLinksView';
 import { initialAvailableApps } from './data/defaultApps';
 import { initialProjects, initialSiteSettings } from './data/defaultSiteData';
 
@@ -220,6 +222,7 @@ export default function App() {
   const navItems = [
     { id: 'proyectos', label: 'PROYECTOS', href: '#proyectos' },
     { id: 'descargas', label: 'DESCARGAS', href: '#descargas' },
+    { id: 'links', label: 'ACORTADOR', href: '/links', isInternalRoute: true },
     { id: 'github', label: 'GITHUB', href: 'https://github.com/devlwte', isExternal: true }
   ];
 
@@ -241,6 +244,11 @@ export default function App() {
   // Render Moderator / Admin Dashboard when accessing /mod
   if (currentPath === '/mod' || currentPath === '/mod/') {
     return <ModDashboard onNavigateHome={() => navigateTo('/')} />;
+  }
+
+  // Render Public URL Shortener when accessing /links or /sh
+  if (currentPath === '/links' || currentPath.startsWith('/links/') || currentPath === '/sh' || currentPath.startsWith('/sh/')) {
+    return <KyrnLinksView onNavigateHome={() => navigateTo('/')} />;
   }
 
   // Render Dynamic App Detail Page when accessing /app/:id
@@ -304,6 +312,12 @@ export default function App() {
               <a 
                 key={item.id}
                 href={item.href} 
+                onClick={(e) => {
+                  if (item.isInternalRoute) {
+                    e.preventDefault();
+                    navigateTo(item.href);
+                  }
+                }}
                 target={item.isExternal ? '_blank' : '_self'}
                 rel={item.isExternal ? 'noreferrer' : undefined}
                 className="hover:text-cyan-400 transition flex items-center space-x-1.5"
@@ -342,7 +356,13 @@ export default function App() {
                 <a
                   key={item.id}
                   href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    if (item.isInternalRoute) {
+                      e.preventDefault();
+                      navigateTo(item.href);
+                    }
+                  }}
                   target={item.isExternal ? '_blank' : '_self'}
                   rel={item.isExternal ? 'noreferrer' : undefined}
                   className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0b0e17] border border-zinc-800/80 text-zinc-300 hover:text-cyan-300 hover:border-cyan-500/40 hover:bg-cyan-950/30 transition active:scale-[0.99]"
@@ -802,6 +822,14 @@ export default function App() {
             <a href="https://github.com/devlwte" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition">
               GitHub (@devlwte)
             </a>
+            <button
+              onClick={() => navigateTo('/links')}
+              className="hover:text-indigo-400 text-zinc-400 transition flex items-center space-x-1"
+              title="Acortador de Enlaces Seguro (Kyrn Links)"
+            >
+              <Link2 className="w-3 h-3 text-indigo-400" />
+              <span>Acortador</span>
+            </button>
             <button
               onClick={() => navigateTo('/mod')}
               className="hover:text-cyan-400 text-zinc-600 transition flex items-center space-x-1"

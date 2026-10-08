@@ -62,11 +62,12 @@ export async function onRequest(context) {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 36px 30px;
+      padding: 30px 20px;
       max-width: 440px;
       width: 90%;
       text-align: center;
       box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      word-break: break-word;
     }
     h1 { font-size: 1.25rem; font-weight: 700; margin: 12px 0 8px 0; }
     p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 24px 0; }
@@ -255,12 +256,15 @@ export async function onRequest(context) {
       padding: 16px 18px;
       margin-bottom: 22px;
       text-align: left;
+      overflow: hidden;
     }
     .dest-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 6px;
       margin-bottom: 6px;
+      flex-wrap: wrap;
     }
     .dest-tag {
       font-size: 0.7rem;
@@ -281,12 +285,21 @@ export async function onRequest(context) {
       font-size: 1.05rem;
       font-weight: 700;
       color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       display: flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
+      width: 100%;
+    }
+    .dest-icon {
+      flex-shrink: 0;
+    }
+    .dest-url-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
     }
 
     /* --- PROMINENT HIGH-VISIBILITY ADVERTISEMENT BANNER --- */
@@ -298,14 +311,17 @@ export async function onRequest(context) {
       margin-bottom: 24px;
       text-align: left;
       position: relative;
+      overflow: hidden;
     }
     .ad-banner-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       margin-bottom: 12px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 8px;
+      flex-wrap: wrap;
     }
     .ad-sponsor-label {
       font-size: 0.65rem;
@@ -331,19 +347,21 @@ export async function onRequest(context) {
       gap: 12px;
       text-decoration: none;
       color: inherit;
+      min-width: 0;
     }
     .ad-main-row {
       display: flex;
       align-items: center;
       gap: 14px;
+      min-width: 0;
     }
     .ad-icon-badge {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 14px;
       background: linear-gradient(135deg, #4f46e5, #3730a3);
       color: #ffffff;
-      font-size: 24px;
+      font-size: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -355,27 +373,33 @@ export async function onRequest(context) {
       min-width: 0;
     }
     .ad-title {
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: var(--ad-title);
       margin-bottom: 3px;
       line-height: 1.3;
+      word-break: break-word;
     }
     .ad-desc {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: var(--text-muted);
       line-height: 1.4;
+      word-break: break-word;
     }
     .ad-cta-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       padding-top: 4px;
+      flex-wrap: wrap;
     }
     .ad-tagline {
       font-size: 0.72rem;
       font-weight: 500;
       color: var(--text-dim);
+      min-width: 0;
+      flex: 1;
     }
     .ad-cta-btn {
       padding: 5px 12px;
@@ -385,6 +409,8 @@ export async function onRequest(context) {
       color: #818cf8;
       font-size: 0.75rem;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* Timer & Action Button */
@@ -410,9 +436,9 @@ export async function onRequest(context) {
     /* Main Jump Button */
     .jump-btn {
       width: 100%;
-      padding: 15px 22px;
+      padding: 14px 18px;
       border-radius: 16px;
-      font-size: 0.95rem;
+      font-size: clamp(0.82rem, 3.8vw, 0.95rem);
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -422,6 +448,9 @@ export async function onRequest(context) {
       transition: all 0.2s ease;
       cursor: pointer;
       border: none;
+      line-height: 1.3;
+      word-break: break-word;
+      box-sizing: border-box;
     }
     .jump-btn.waiting {
       background: var(--btn-waiting);
@@ -452,10 +481,11 @@ export async function onRequest(context) {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      gap: 12px;
       margin-top: 16px;
       font-size: 0.75rem;
       color: var(--text-dim);
+      flex-wrap: wrap;
     }
     .footer-actions a {
       color: var(--text-muted);
@@ -465,6 +495,54 @@ export async function onRequest(context) {
     }
     .footer-actions a:hover {
       color: var(--text);
+    }
+
+    /* Mobile Fluid Constraints */
+    @media (max-width: 480px) {
+      body {
+        padding: 16px 12px;
+      }
+      .card {
+        padding: 20px 14px;
+        border-radius: 18px;
+      }
+      .dest-card {
+        padding: 12px 12px;
+        border-radius: 14px;
+        margin-bottom: 16px;
+      }
+      .dest-url {
+        font-size: 0.95rem;
+      }
+      .ad-banner-box {
+        padding: 14px 12px;
+        border-radius: 14px;
+        margin-bottom: 18px;
+      }
+      .ad-main-row {
+        gap: 10px;
+      }
+      .ad-icon-badge {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+        border-radius: 10px;
+      }
+      .ad-title {
+        font-size: 0.85rem;
+      }
+      .ad-desc {
+        font-size: 0.72rem;
+      }
+      .jump-btn {
+        padding: 13px 12px;
+        border-radius: 12px;
+      }
+      .footer-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 0.72rem;
+      }
     }
   </style>
 </head>
@@ -495,8 +573,8 @@ export async function onRequest(context) {
           <span class="dest-badge">✓ Libre de contenido para adultos</span>
         </div>
         <div class="dest-url" title="${safeTarget}">
-          <span>↗</span>
-          <span>${safeHostname}</span>
+          <span class="dest-icon">↗</span>
+          <span class="dest-url-text">${safeHostname}</span>
         </div>
       </div>
 

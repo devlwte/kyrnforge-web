@@ -146,27 +146,27 @@ export default function KyrnLinksView({ onNavigateHome }) {
       <header className={`border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
         isDark ? 'border-[#1e263d] bg-[#090d16]/90' : 'border-[#e2e8f0] bg-white/90'
       }`}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 h-16 flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <button
               onClick={onNavigateHome}
-              className={`text-xs font-medium transition flex items-center space-x-1.5 py-1 px-2.5 rounded-lg ${
+              className={`text-xs font-medium transition flex items-center space-x-1.5 py-1 px-2 rounded-lg flex-shrink-0 ${
                 isDark ? 'text-[#94a3b8] hover:text-white hover:bg-[#141b2c]' : 'text-[#64748b] hover:text-black hover:bg-slate-100'
               }`}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>KyrnForge</span>
             </button>
-            <span className={isDark ? 'text-[#2a3450]' : 'text-slate-300'}>/</span>
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/30">
+            <span className={`flex-shrink-0 ${isDark ? 'text-[#2a3450]' : 'text-slate-300'}`}>/</span>
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/30 flex-shrink-0">
                 <Link2 className="w-4 h-4" />
               </div>
-              <span className="text-sm font-semibold tracking-tight">Kyrn Links</span>
+              <span className="text-xs sm:text-sm font-semibold tracking-tight truncate">Kyrn Links</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
             {/* Theme Toggle Button (Light / Dark) */}
             <button
               onClick={toggleTheme}
@@ -193,20 +193,20 @@ export default function KyrnLinksView({ onNavigateHome }) {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16 space-y-10">
+      <main className="max-w-3xl mx-auto px-3.5 sm:px-6 py-8 sm:py-16 space-y-8 sm:space-y-10">
         
         {/* Clean Modern Hero */}
-        <div className="text-center space-y-3">
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+        <div className="text-center space-y-3 px-2">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border max-w-full text-center ${
             isDark ? 'bg-[#121827] border-[#1e263d] text-[#818cf8]' : 'bg-indigo-50 border-indigo-100 text-indigo-700'
           }`}>
-            <Zap className="w-3.5 h-3.5" />
-            <span>Acortador público y seguro · Red Edge Global</span>
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate sm:whitespace-normal">Acortador público y seguro · Red Edge Global</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight break-words">
             Enlaces cortos, limpios y confiables
           </h1>
-          <p className={`text-sm sm:text-base max-w-xl mx-auto leading-relaxed ${
+          <p className={`text-xs sm:text-base max-w-xl mx-auto leading-relaxed ${
             isDark ? 'text-[#94a3b8]' : 'text-slate-600'
           }`}>
             Comparte enlaces seguros protegidos contra spam, malware y contenido para adultos. Sin registro obligatorio y listo en 1 clic.
@@ -214,7 +214,7 @@ export default function KyrnLinksView({ onNavigateHome }) {
         </div>
 
         {/* Shortener Card */}
-        <div className={`border rounded-2xl p-6 sm:p-8 transition-all shadow-xl ${
+        <div className={`border rounded-xl sm:rounded-2xl p-4 sm:p-8 transition-all shadow-xl ${
           isDark 
             ? 'bg-[#111625] border-[#1e263d] shadow-black/25' 
             : 'bg-white border-slate-200/80 shadow-slate-200/50'
@@ -232,7 +232,7 @@ export default function KyrnLinksView({ onNavigateHome }) {
                 </span>
               </label>
               <div className="relative">
-                <div className={`absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none ${
+                <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
                   isDark ? 'text-[#64748b]' : 'text-slate-400'
                 }`}>
                   <Globe className="w-4 h-4" />
@@ -243,7 +243,7 @@ export default function KyrnLinksView({ onNavigateHome }) {
                   onChange={(e) => setTargetUrl(e.target.value)}
                   placeholder="https://ejemplo.com/recurso-o-documento-largo..."
                   required
-                  className={`w-full border rounded-xl pl-10 pr-4 py-3 text-sm transition outline-none ${
+                  className={`w-full min-w-0 border rounded-xl pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm transition outline-none ${
                     isDark 
                       ? 'bg-[#090d16] border-[#1e263d] text-[#f1f5f9] placeholder-[#475569] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25' 
                       : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600/25 focus:bg-white'
@@ -261,19 +261,19 @@ export default function KyrnLinksView({ onNavigateHome }) {
                   isDark ? 'text-[#818cf8] hover:text-[#a5b4fc]' : 'text-indigo-600 hover:text-indigo-700'
                 }`}
               >
-                <SlidersHorizontal className="w-3 h-3" />
+                <SlidersHorizontal className="w-3 h-3 flex-shrink-0" />
                 <span>{showOptions ? 'Ocultar opciones avanzadas' : 'Personalizar alias corto (opcional)'}</span>
               </button>
 
               {showOptions && (
-                <div className={`mt-3 p-3.5 rounded-xl border space-y-1.5 ${
+                <div className={`mt-3 p-3 sm:p-3.5 rounded-xl border space-y-2 ${
                   isDark ? 'bg-[#090d16] border-[#1e263d]' : 'bg-slate-50 border-slate-200'
                 }`}>
-                  <label className={`text-[11px] font-medium ${isDark ? 'text-[#94a3b8]' : 'text-slate-600'}`}>
+                  <label className={`text-[11px] font-medium block ${isDark ? 'text-[#94a3b8]' : 'text-slate-600'}`}>
                     Alias personalizado
                   </label>
-                  <div className="flex items-center">
-                    <span className={`text-xs px-2.5 py-2 rounded-l-lg font-mono border border-r-0 ${
+                  <div className="flex flex-col sm:flex-row sm:items-center w-full">
+                    <span className={`text-xs px-3 py-2 font-mono border rounded-t-lg sm:rounded-t-none sm:rounded-l-lg border-b-0 sm:border-b sm:border-r-0 select-none ${
                       isDark ? 'bg-[#141a29] border-[#1e263d] text-[#64748b]' : 'bg-slate-200 border-slate-300 text-slate-500'
                     }`}>
                       kyrnforge.dev/l/
@@ -283,7 +283,7 @@ export default function KyrnLinksView({ onNavigateHome }) {
                       value={customSlug}
                       onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
                       placeholder="mi-enlace"
-                      className={`flex-1 border rounded-r-lg px-3 py-2 text-xs font-mono outline-none ${
+                      className={`w-full sm:flex-1 min-w-0 border rounded-b-lg sm:rounded-b-none sm:rounded-r-lg px-3 py-2 text-xs font-mono outline-none ${
                         isDark 
                           ? 'bg-[#0d121f] border-[#1e263d] text-[#f1f5f9] focus:border-indigo-500' 
                           : 'bg-white border-slate-300 text-slate-900 focus:border-indigo-600'
@@ -299,9 +299,9 @@ export default function KyrnLinksView({ onNavigateHome }) {
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs flex items-start space-x-2">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs flex items-start space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span className="font-medium">{errorMsg}</span>
+                <span className="font-medium break-words">{errorMsg}</span>
               </div>
             )}
 
@@ -309,14 +309,14 @@ export default function KyrnLinksView({ onNavigateHome }) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/25 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 sm:py-3.5 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/25 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span>Verificando y acortando...</span>
               ) : (
                 <>
                   <span>ACORTAR ENLACE</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 flex-shrink-0" />
                 </>
               )}
             </button>
@@ -324,62 +324,64 @@ export default function KyrnLinksView({ onNavigateHome }) {
 
           {/* Success Generated Card */}
           {successLink && (
-            <div className={`p-4 sm:p-5 rounded-xl border space-y-3 mt-5 transition-all animate-in fade-in ${
+            <div className={`p-3.5 sm:p-5 rounded-xl border space-y-3 mt-5 transition-all animate-in fade-in ${
               isDark 
                 ? 'bg-[#151c2e] border-indigo-500/40' 
                 : 'bg-indigo-50/70 border-indigo-200'
             }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-emerald-500 flex items-center space-x-1.5">
-                  <Check className="w-4 h-4" />
-                  <span>¡Enlace generado exitosamente!</span>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-xs font-semibold text-emerald-500 flex items-center space-x-1.5 truncate">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">¡Enlace generado exitosamente!</span>
                 </span>
-                <span className={`text-[11px] font-mono ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
+                <span className={`text-[11px] font-mono truncate max-w-[120px] sm:max-w-none flex-shrink-0 ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
                   {successLink.hostname}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
                 <input
                   type="text"
                   readOnly
                   value={successLink.shortUrl}
-                  className={`flex-1 border rounded-lg px-3 py-2 text-xs font-mono select-all outline-none ${
+                  className={`w-full sm:flex-1 min-w-0 border rounded-lg px-3 py-2 text-xs font-mono select-all outline-none ${
                     isDark 
                       ? 'bg-[#090d16] border-[#1e263d] text-indigo-300' 
                       : 'bg-white border-slate-200 text-indigo-700'
                   }`}
                 />
-                <button
-                  type="button"
-                  onClick={() => handleCopy(successLink.shortUrl, 'new')}
-                  className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center space-x-1.5 transition shadow-sm"
-                >
-                  {copiedId === 'new' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedId === 'new' ? '¡Copiado!' : 'Copiar'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowQr(!showQr)}
-                  className={`p-2 rounded-lg border transition ${
-                    isDark 
-                      ? 'bg-[#1b2235] border-[#222c44] text-[#94a3b8] hover:text-white' 
-                      : 'bg-white border-slate-200 text-slate-600 hover:text-black'
-                  }`}
-                  title="Ver código QR"
-                >
-                  <QrCode className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(successLink.shortUrl, 'new')}
+                    className="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center justify-center space-x-1.5 transition shadow-sm active:scale-95"
+                  >
+                    {copiedId === 'new' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedId === 'new' ? '¡Copiado!' : 'Copiar'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowQr(!showQr)}
+                    className={`p-2 rounded-lg border transition flex-shrink-0 flex items-center justify-center ${
+                      isDark 
+                        ? 'bg-[#1b2235] border-[#222c44] text-[#94a3b8] hover:text-white' 
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-black'
+                    }`}
+                    title="Ver código QR"
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* QR Code display */}
               {showQr && (
                 <div className="pt-2 text-center flex flex-col items-center">
-                  <div className="p-3 bg-white rounded-xl shadow-md border inline-block">
+                  <div className="p-3 bg-white rounded-xl shadow-md border inline-block max-w-full">
                     <img 
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(successLink.shortUrl)}`}
                       alt="Código QR del enlace"
-                      className="w-32 h-32"
+                      className="w-32 h-32 max-w-full"
                     />
                   </div>
                   <span className={`text-[11px] mt-2 ${isDark ? 'text-[#64748b]' : 'text-slate-400'}`}>
@@ -392,12 +394,12 @@ export default function KyrnLinksView({ onNavigateHome }) {
         </div>
 
         {/* --- PROMINENT SPONSOR AD SHOWCASE (High Viewability Banner) --- */}
-        <div className={`p-5 rounded-2xl border transition-all ${
+        <div className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl border transition-all ${
           isDark 
             ? 'bg-[#111625] border-[#1e263d]' 
             : 'bg-white border-slate-200 shadow-sm'
         }`}>
-          <div className="flex items-center justify-between text-[11px] mb-3">
+          <div className="flex items-center justify-between text-[11px] mb-3 flex-wrap gap-2">
             <span className={`font-bold uppercase tracking-wider text-[10px] ${
               isDark ? 'text-[#64748b]' : 'text-slate-400'
             }`}>
@@ -417,34 +419,34 @@ export default function KyrnLinksView({ onNavigateHome }) {
             href="https://kyrnforge.dev"
             target="_blank"
             rel="noopener sponsored"
-            className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl border transition gap-4 text-left group ${
+            className={`flex flex-col md:flex-row items-start md:items-center justify-between p-3.5 sm:p-4 rounded-xl border transition gap-3.5 sm:gap-4 text-left group ${
               isDark 
                 ? 'bg-[#0d121f] border-[#1e263d] hover:border-indigo-500/40' 
                 : 'bg-slate-50 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30'
             }`}
           >
-            <div className="flex items-center space-x-3.5 min-w-0">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white text-xl flex-shrink-0 shadow-md shadow-indigo-600/30">
+            <div className="flex items-start sm:items-center space-x-3 sm:space-x-3.5 min-w-0 w-full md:w-auto">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white text-lg sm:text-xl flex-shrink-0 shadow-md shadow-indigo-600/30">
                 ⚡
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center space-x-2">
-                  <h4 className={`text-sm font-bold transition truncate ${
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h4 className={`text-xs sm:text-sm font-bold transition truncate max-w-full ${
                     isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
                   }`}>
                     Servidores Cloud NVMe &amp; VPS Ultrarrápidos
                   </h4>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30 whitespace-nowrap">
                     OFERTA DEV
                   </span>
                 </div>
-                <p className={`text-xs mt-0.5 line-clamp-1 ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
+                <p className={`text-xs mt-0.5 line-clamp-2 sm:line-clamp-1 break-words ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
                   Despliega microservicios y APIs locales a producción en 55 segundos. Tráfico ilimitado y 99.9% uptime.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 flex-shrink-0 self-end md:self-auto">
+            <div className="flex items-center space-x-2 flex-shrink-0 w-full md:w-auto justify-end">
               <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-sm flex items-center space-x-1 group-hover:bg-indigo-500 transition">
                 <span>Ver Planes</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -471,19 +473,19 @@ export default function KyrnLinksView({ onNavigateHome }) {
               {recentLinks.map((item) => (
                 <div
                   key={item.slug}
-                  className={`p-3.5 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                  className={`p-3 sm:p-3.5 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
                     isDark 
                       ? 'bg-[#111625] border-[#1e263d] hover:border-[#2a3554]' 
                       : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
                   }`}
                 >
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-mono text-xs font-bold text-indigo-500">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <span className="font-mono text-xs font-bold text-indigo-500 flex-shrink-0">
                         /l/{item.slug}
                       </span>
-                      <span className={isDark ? 'text-[#64748b]' : 'text-slate-300'}>·</span>
-                      <span className={`text-[11px] truncate max-w-[220px] sm:max-w-xs ${
+                      <span className={`flex-shrink-0 ${isDark ? 'text-[#64748b]' : 'text-slate-300'}`}>·</span>
+                      <span className={`text-[11px] truncate min-w-0 flex-1 ${
                         isDark ? 'text-[#94a3b8]' : 'text-slate-600'
                       }`} title={item.targetUrl}>
                         {item.hostname}
@@ -491,7 +493,7 @@ export default function KyrnLinksView({ onNavigateHome }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 self-end sm:self-auto">
+                  <div className="flex items-center space-x-2 self-end sm:self-auto flex-shrink-0">
                     <button
                       onClick={() => handleCopy(item.shortUrl, item.slug)}
                       className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border flex items-center space-x-1 transition ${

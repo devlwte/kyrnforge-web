@@ -1,1 +1,128 @@
-[]
+[
+  {
+    "id": "kyrnex",
+    "tag": "01",
+    "shortName": "Kyrnex",
+    "title": "Kyrnex Platform",
+    "badge": "v1.0.3 Oficial",
+    "badgeColor": "border-purple-500/40 text-purple-400 bg-purple-950/30",
+    "category": "Plataforma & Runtime Local",
+    "system": "Windows 10/11 (64-bit) · Instalador Oficial",
+    "iconImg": "/projects/kyrnex.png",
+    "iconScale": "",
+    "glowClass": "glow-purple",
+    "themeBorder": "border-purple-500/40",
+    "btnBg": "bg-purple-500 hover:bg-purple-400 text-zinc-950 shadow-purple-500/25",
+    "accentText": "text-purple-400",
+    "description": "Plataforma integral de ejecución y gestión de aplicaciones web locales (Local Web Applications Runtime & Manager Platform). Permite levantar servidores locales instantáneos, orquestar microservicios con DynExpress y probar APIs directamente en Windows sin configuraciones engorrosas.",
+    "features": [
+      {
+        "label": "Local Web Runtime",
+        "iconName": "Server",
+        "color": "text-purple-400"
+      },
+      {
+        "label": "DynExpress Core",
+        "iconName": "Layers",
+        "color": "text-purple-400"
+      },
+      {
+        "label": "Manager de Servidores",
+        "iconName": "Zap",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Cero Configuración",
+        "iconName": "Zap",
+        "color": "text-cyan-400"
+      }
+    ],
+    "downloadUrl": "https://github.com/devlwte/kyrnex/releases/download/v1.0.3/Kyrnex-Setup-1.0.3.exe",
+    "downloadLabel": "DESCARGAR SETUP",
+    "repoUrl": "https://github.com/devlwte/kyrnex",
+    "metaInfo": "Local Web Runtime · DynExpress Core",
+    "themeGlow": "shadow-purple-500/20"
+  },
+  {
+    "id": "kpm",
+    "tag": "02",
+    "shortName": "KPM Studio",
+    "title": "Krypton Package Manager (KPM)",
+    "badge": "v1.0.0 Oficial",
+    "badgeColor": "border-emerald-500/30 bg-emerald-950/40 text-emerald-400",
+    "category": "Software de Empaquetado & Compresión",
+    "system": "Windows 10 & 11 (64-bit) · Instalador Setup Oficial y Modo Portable",
+    "iconImg": "/projects/kpm.png",
+    "iconScale": "scale-[1.12]",
+    "glowClass": "glow-cyan",
+    "themeBorder": "border-cyan-500/40",
+    "btnBg": "bg-cyan-500 hover:bg-cyan-400 text-zinc-950 shadow-cyan-500/25",
+    "accentText": "text-cyan-400",
+    "description": "Suite moderna de empaquetado y compresión de software para desarrolladores. Diseñada para sustituir herramientas tradicionales engorrosas mediante una interfaz visual cibernética, compresión extrema Brotli Ultra (ahorro superior al 99% en imágenes crudas .iso), Bóveda criptográfica militar AES-256-GCM con protección Anti-Tamper, Modo Sigilo con identificadores anónimos 16-hex sin extensión y extracción de flujo multi-volumen continua sin archivos temporales.",
+    "features": [
+      {
+        "label": "Cifrado Bóveda AES-256",
+        "iconName": "Shield",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Brotli Ultra & Deflate 9",
+        "iconName": "Layers",
+        "color": "text-emerald-400"
+      },
+      {
+        "label": "Bytecode V8 Blindado",
+        "iconName": "Cpu",
+        "color": "text-purple-400"
+      }
+    ],
+    "downloadUrl": "https://github.com/devlwte/kpm-studio/releases/download/v1.0.0/Krypton-Package-Manager-Setup-v1.0.0.zip",
+    "downloadLabel": "DESCARGAR SETUP (.ZIP)",
+    "repoUrl": "https://github.com/devlwte/kpm-studio",
+    "metaInfo": "Hash SHA-256 verificado · Compresión Brotli Ultra"
+  },
+  {
+    "id": "kyrn-devdock",
+    "tag": "03",
+    "title": "Kyrn DevDock",
+    "shortName": "Kyrn DevDock",
+    "badge": "v1.0.0 Oficial",
+    "badgeColor": "border-emerald-500/40 text-emerald-400 bg-emerald-950/30",
+    "category": "Herramientas Dev & Red Local",
+    "system": "Windows 10/11 (64-bit) · Instalador Oficial",
+    "iconImg": "/projects/kyrn-devdock.png",
+    "iconScale": "",
+    "themeBorder": "border-emerald-500/40",
+    "themeGlow": "shadow-emerald-500/20",
+    "glowClass": "glow-emerald",
+    "btnBg": "bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/25",
+    "accentText": "text-emerald-400",
+    "description": "Centinela de puertos y entornos de desarrollo locales creado en Rust y Tauri v2. Diagnóstico en tiempo real de sockets TCP/UDP, detección de procesos huérfanos (Zombie Hunter) con terminación segura, gestión de dominios virtuales .local y sincronización multi-tenant cifrada con Kyrn Cloud (kyrnforge.dev).",
+    "features": [
+      {
+        "label": "Port Sentinel",
+        "iconName": "Zap",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Network Diagnostics",
+        "iconName": "Activity",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Tauri v2 & Rust",
+        "iconName": "Cpu",
+        "color": "text-cyan-400"
+      },
+      {
+        "label": "Zombie Hunter Killer",
+        "iconName": "Terminal",
+        "color": "text-cyan-400"
+      }
+    ],
+    "downloadUrl": "https://github.com/devlwte/kyrn-devdock/releases",
+    "downloadLabel": "DESCARGAR",
+    "repoUrl": "https://github.com/devlwte/kyrn-devdock",
+    "metaInfo": "Port Sentinel · Network Diagnostics"
+  }
+]

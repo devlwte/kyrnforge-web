@@ -1,5 +1,5 @@
 // Cloudflare Pages Function: /sitemap.xml
-// Dynamically generates the sitemap containing all apps and projects from Cloudflare KV
+// Dynamically generates the sitemap containing all apps and projects from Cloudflare KV / Static Fallback
 
 export async function onRequestGet(context) {
   try {
@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
       projects = (await kv.get("projects", { type: "json" })) || [];
     }
 
-    if (!apps.length && !projects.length && env?.ASSETS) {
+    if ((!apps || !apps.length) && (!projects || !projects.length) && env?.ASSETS) {
       const [resApps, resProjects] = await Promise.all([
         env.ASSETS.fetch(new URL('/data/apps.json', request.url)).then(r => r.ok ? r.json() : []).catch(() => []),
         env.ASSETS.fetch(new URL('/data/projects.json', request.url)).then(r => r.ok ? r.json() : []).catch(() => [])
@@ -27,11 +27,16 @@ export async function onRequestGet(context) {
     const seenIds = new Set();
     const appEntries = [];
 
-    for (const item of [...apps, ...projects]) {
+    for (const item of [...(apps || []), ...(projects || [])]) {
       if (item && item.id && !seenIds.has(item.id.toLowerCase())) {
         seenIds.add(item.id.toLowerCase());
         appEntries.push(item.id.toLowerCase());
       }
+    }
+
+    // High reliability fallback list for essential core apps
+    if (appEntries.length === 0) {
+      appEntries.push('kyrnex', 'kpm', 'kyrn-devdock');
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -66,6 +71,18 @@ ${appEntries.map(id => `  <url>
   <url>
     <loc>https://kyrnforge.dev/</loc>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://kyrnforge.dev/app/kyrnex</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kyrnforge.dev/app/kpm</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kyrnforge.dev/app/kyrn-devdock</loc>
+    <priority>0.8</priority>
   </url>
 </urlset>`, {
       headers: { "Content-Type": "application/xml; charset=UTF-8" }

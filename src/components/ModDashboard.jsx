@@ -3,13 +3,11 @@ import {
   Shield, 
   Terminal, 
   Download, 
-  ExternalLink, 
   Cpu, 
   Layers, 
   Gamepad2, 
   Code2, 
   Package, 
-  ArrowRight, 
   Zap, 
   ShoppingBag, 
   Sparkles, 
@@ -25,7 +23,6 @@ import {
   ArrowDown, 
   FileDown, 
   FileUp, 
-  RotateCcw, 
   Lock, 
   Unlock, 
   Eye, 
@@ -37,7 +34,6 @@ import {
   Globe2,
   Save,
   LayoutGrid,
-  Info,
   RefreshCw,
   Search
 } from 'lucide-react';
@@ -183,6 +179,18 @@ export default function ModDashboard({ onNavigateHome }) {
     return initialSiteSettings;
   });
 
+  // --- STATE 4: Database Status & Config ---
+  const [dbStatus, setDbStatus] = useState({ connected: false, type: 'none', loading: true });
+  const [showDbGuide, setShowDbGuide] = useState(false);
+  const [customDbUrl, setCustomDbUrl] = useState(() => {
+    try {
+      return localStorage.getItem('kyrnforge_custom_db_url') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isSavingDb, setIsSavingDb] = useState(false);
+
   // Fetch latest JSON data from server on dashboard mount
   useEffect(() => {
     const fetchRemoteData = async () => {
@@ -298,16 +306,6 @@ export default function ModDashboard({ onNavigateHome }) {
     reader.readAsText(file);
     e.target.value = '';
   };
-  const [dbStatus, setDbStatus] = useState({ connected: false, type: 'none', loading: true });
-  const [showDbGuide, setShowDbGuide] = useState(false);
-  const [customDbUrl, setCustomDbUrl] = useState(() => {
-    try {
-      return localStorage.getItem('kyrnforge_custom_db_url') || '';
-    } catch {
-      return '';
-    }
-  });
-  const [isSavingDb, setIsSavingDb] = useState(false);
 
   // Check Database connection (Cloudflare KV or External DB)
   const refreshDbStatus = async () => {

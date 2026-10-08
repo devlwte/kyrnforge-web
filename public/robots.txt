@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /mod
+Disallow: /api/
 
 # Sitemap oficial de KyrnForge
 Sitemap: https://kyrnforge.dev/sitemap.xml

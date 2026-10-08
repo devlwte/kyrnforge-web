@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Shield, 
   Terminal, 
@@ -6,7 +6,6 @@ import {
   ExternalLink, 
   Cpu, 
   Layers, 
-  Gamepad2, 
   Code2, 
   Package, 
   Activity,
@@ -38,7 +37,6 @@ const ICON_MAP = {
   Server,
   Zap,
   Terminal,
-  Gamepad2,
   ShoppingBag,
   Code2,
   Package,
@@ -56,9 +54,10 @@ export default function App() {
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [latencyMs, setLatencyMs] = useState(null);
   const [projectFilter, setProjectFilter] = useState('all');
-  const [copiedKpmLink, setCopiedKpmLink] = useState(false);
   const [currentAppIndex, setCurrentAppIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [copiedAppId, setCopiedAppId] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(null);
 
   // Synchronize available apps from localStorage (or defaults)
   const [availableApps, setAvailableApps] = useState(() => {
@@ -71,7 +70,7 @@ export default function App() {
     } catch (e) {
       console.error("Error loading apps from localStorage", e);
     }
-    return initialAvailableApps;
+    return initialAvailableApps && initialAvailableApps.length > 0 ? initialAvailableApps : [];
   });
 
   // Synchronize projects catalog from localStorage (or defaults)
@@ -85,7 +84,7 @@ export default function App() {
     } catch (e) {
       console.error("Error loading projects from localStorage", e);
     }
-    return initialProjects;
+    return initialProjects && initialProjects.length > 0 ? initialProjects : [];
   });
 
   // Synchronize site settings (hero & metrics) from localStorage (or defaults)
@@ -99,24 +98,39 @@ export default function App() {
     } catch (e) {
       console.error("Error loading siteSettings from localStorage", e);
     }
-    return initialSiteSettings;
+    return initialSiteSettings || {};
   });
 
-  // Client-side history popstate listener for /mod route
+  // Navigation function that synchronizes URL and document title
+  const navigateTo = useCallback((path) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setCurrentPath(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (path === '/' || path === '') {
+      document.title = 'KyrnForge · Ecosistema de Software & Herramientas de Escritorio';
+    }
+  }, []);
+
+  // Browser history popstate listener (back/forward button)
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
+      const path = window.location.pathname;
+      setCurrentPath(path);
+      if (path === '/' || path === '') {
+        document.title = 'KyrnForge · Ecosistema de Software & Herramientas de Escritorio';
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Fetch latest JSON data from server on startup so updates are received by all visitors
+  // Fetch latest JSON data from server on startup so updates in KV are reflected for visitors
   useEffect(() => {
     const fetchRemoteData = async () => {
       try {
         const timestamp = Date.now();
-        // 1. Try fetching via API (supports Cloudflare KV and dynamic Edge)
         const apiRes = await fetch(`/api/v1/content?t=${timestamp}`, { cache: 'no-store' })
           .then(r => r.ok ? r.json() : null)
           .catch(() => null);
@@ -135,24 +149,7 @@ export default function App() {
           return;
         }
 
-        // 1.5 External Database URL fallback (Firebase RTDB, Supabase, etc.)
-        const customDbUrl = localStorage.getItem('kyrnforge_custom_db_url');
-        if (customDbUrl) {
-          try {
-            const cleanUrl = customDbUrl.replace(/\/$/, '');
-            const target = cleanUrl.endsWith('.json') ? cleanUrl : `${cleanUrl}/apps.json`;
-            const customApps = await fetch(`${target}?t=${timestamp}`).then(r => r.ok ? r.json() : null).catch(() => null);
-            if (customApps && Array.isArray(customApps) && customApps.length > 0) {
-              setAvailableApps(customApps);
-              localStorage.setItem('kyrnforge_available_apps', JSON.stringify(customApps));
-              return;
-            }
-          } catch {
-            // fallback to static JSON
-          }
-        }
-
-        // 2. Direct static JSON fallback with cache-busting
+        // Direct static JSON fallback
         const [resApps, resProjects, resSettings] = await Promise.all([
           fetch(`/data/apps.json?t=${timestamp}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`/data/projects.json?t=${timestamp}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -178,104 +175,28 @@ export default function App() {
     fetchRemoteData();
   }, []);
 
-  const navigateTo = (path) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Sync availableApps, projects, and siteSettings when returning to public view or on external storage change
+  // Keyboard navigation for carousel (Left / Right Arrow keys)
   useEffect(() => {
-    if (currentPath !== '/mod' && currentPath !== '/mod/') {
-      try {
-        const savedApps = localStorage.getItem('kyrnforge_available_apps');
-        if (savedApps) {
-          const parsed = JSON.parse(savedApps);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setAvailableApps(parsed);
-          }
-        }
-        const savedProjects = localStorage.getItem('kyrnforge_projects');
-        if (savedProjects) {
-          const parsed = JSON.parse(savedProjects);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setProjects(parsed);
-          }
-        }
-        const savedSettings = localStorage.getItem('kyrnforge_site_settings');
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings);
-          if (parsed && parsed.hero) {
-            setSiteSettings(parsed);
-          }
-        }
-      } catch (e) {
-        // ignore
+    if (currentPath !== '/' && currentPath !== '') return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') {
+        setCurrentAppIndex(prev => (prev === 0 ? Math.max(0, availableApps.length - 1) : prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        setCurrentAppIndex(prev => (prev === availableApps.length - 1 ? 0 : prev + 1));
       }
-    }
-  }, [currentPath]);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [availableApps.length, currentPath]);
 
-  // Adjust carousel index if apps array shrinks
-  useEffect(() => {
-    if (availableApps.length > 0 && currentAppIndex >= availableApps.length) {
-      setCurrentAppIndex(Math.max(0, availableApps.length - 1));
-    }
-  }, [availableApps.length, currentAppIndex]);
+  // Carousel navigation handlers
+  const prevApp = useCallback(() => {
+    setCurrentAppIndex(prev => (prev === 0 ? availableApps.length - 1 : prev - 1));
+  }, [availableApps.length]);
 
-  // Centralized Navigation Links (Easily expandable for future additions)
-  const navItems = [
-    { id: 'proyectos', label: 'PROYECTOS', href: '#proyectos' },
-    { id: 'descargas', label: 'DESCARGAS', href: '#descargas' },
-    { id: 'api', label: 'API GATEWAY', href: '#api' },
-    { id: 'github', label: 'GITHUB', href: 'https://github.com/devlwte', isExternal: true }
-  ];
-
-  const fetchLiveApi = async (endpoint = selectedEndpoint) => {
-    setIsLoadingApi(true);
-    const start = performance.now();
-    try {
-      let res;
-      if (endpoint === 'status') {
-        res = await fetch('/api/v1/status');
-      } else if (endpoint === 'health') {
-        res = await fetch('/api/v1/health');
-      } else if (endpoint === 'auth') {
-        res = await fetch('/api/v1/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey: 'demo_guest_key', clientApp: 'KyrnForgeWebClient' })
-        });
-      }
-      const data = await res.json();
-      setLatencyMs(Math.round(performance.now() - start));
-      setApiResponse(data);
-    } catch (e) {
-      setLatencyMs(Math.round(performance.now() - start));
-      setApiResponse({
-        status: "operational",
-        service: `KyrnForge API (${endpoint.toUpperCase()})`,
-        version: "1.0.0",
-        gateway: "Cloudflare Edge Serverless",
-        node: "LOCAL-EDGE",
-        timestamp: new Date().toISOString(),
-        uptime: "99.99%",
-        note: "Simulación de respuesta local"
-      });
-    } finally {
-      setIsLoadingApi(false);
-    }
-  };
-
-  const [copiedAppId, setCopiedAppId] = useState(null);
-  const [touchStartX, setTouchStartX] = useState(null);
-
-  const prevApp = () => {
-    setCurrentAppIndex((prev) => (prev === 0 ? availableApps.length - 1 : prev - 1));
-  };
-
-  const nextApp = () => {
-    setCurrentAppIndex((prev) => (prev === availableApps.length - 1 ? 0 : prev + 1));
-  };
+  const nextApp = useCallback(() => {
+    setCurrentAppIndex(prev => (prev === availableApps.length - 1 ? 0 : prev + 1));
+  }, [availableApps.length]);
 
   const handleTouchStart = (e) => {
     setTouchStartX(e.touches[0].clientX);
@@ -296,14 +217,67 @@ export default function App() {
     if (!url) return;
     navigator.clipboard.writeText(url);
     setCopiedAppId(appId);
-    setTimeout(() => setCopiedAppId(null), 2000);
+    setTimeout(() => setCopiedAppId(null), 2200);
   };
+
+  // Centralized Navigation Items
+  const navItems = [
+    { id: 'proyectos', label: 'PROYECTOS', href: '#proyectos' },
+    { id: 'descargas', label: 'DESCARGAS', href: '#descargas' },
+    { id: 'api', label: 'API GATEWAY', href: '#api' },
+    { id: 'github', label: 'GITHUB', href: 'https://github.com/devlwte', isExternal: true }
+  ];
+
+  // API Gateway Tester
+  const fetchLiveApi = async (endpoint = selectedEndpoint) => {
+    setIsLoadingApi(true);
+    const start = performance.now();
+    try {
+      let res;
+      if (endpoint === 'status') {
+        res = await fetch('/api/v1/status');
+      } else if (endpoint === 'health') {
+        res = await fetch('/api/v1/health');
+      } else if (endpoint === 'auth') {
+        res = await fetch('/api/v1/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: 'demo_guest_key', clientApp: 'KyrnForgeWebClient' })
+        });
+      }
+      const data = await res.json();
+      setLatencyMs(Math.round(performance.now() - start));
+      setApiResponse(data);
+    } catch {
+      setLatencyMs(Math.round(performance.now() - start));
+      setApiResponse({
+        status: "operational",
+        service: `KyrnForge API (${endpoint.toUpperCase()})`,
+        version: "1.0.0",
+        gateway: "Cloudflare Edge Serverless",
+        node: "LOCAL-EDGE",
+        timestamp: new Date().toISOString(),
+        uptime: "99.99%",
+        note: "Simulación de respuesta local"
+      });
+    } finally {
+      setIsLoadingApi(false);
+    }
+  };
+
+  // Derive dynamic category filters from existing projects to avoid empty/dead tabs
+  const availableCategories = Array.from(new Set((projects || []).map(p => p.categoryLabel || p.category).filter(Boolean)));
+  const categoryFilters = [
+    { id: 'all', label: `Todos (${(projects || []).length})` },
+    ...availableCategories.map(cat => ({
+      id: cat,
+      label: `${cat} (${(projects || []).filter(p => (p.categoryLabel || p.category) === cat).length})`
+    }))
+  ];
 
   const filteredProjects = (projects || []).filter(p => {
     if (projectFilter === 'all') return true;
-    if (projectFilter === 'gaming') return p.category === 'gaming';
-    if (projectFilter === 'tools') return p.category === 'tools' || p.category === 'featured';
-    return p.category === projectFilter;
+    return (p.categoryLabel || p.category) === projectFilter;
   });
 
   // Render Moderator / Admin Dashboard when accessing /mod
@@ -341,23 +315,32 @@ export default function App() {
           
           {/* Brand Identity */}
           <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-[#0c0e17] border border-zinc-800/90 flex items-center justify-center p-2 shadow-inner flex-shrink-0">
-              <img src="/logo.svg" alt="KyrnForge Logo" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-mono font-bold text-sm tracking-wider text-zinc-100">KYRNFORGE</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950/40 text-cyan-400 border border-cyan-500/30">
-                  STUDIO
-                </span>
+            <a 
+              href="/" 
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('/');
+              }} 
+              className="flex items-center space-x-2.5 sm:space-x-3 group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-[#0c0e17] border border-zinc-800/90 group-hover:border-cyan-500/40 flex items-center justify-center p-2 shadow-inner flex-shrink-0 transition">
+                <img src="/logo.svg" alt="KyrnForge Logo" className="w-full h-full object-contain" />
               </div>
-              <div className="text-[10px] font-mono text-zinc-500 hidden sm:block">
-                Digital Engineering & Software Forge
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono font-bold text-sm tracking-wider text-zinc-100 group-hover:text-cyan-300 transition">KYRNFORGE</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950/40 text-cyan-400 border border-cyan-500/30">
+                    STUDIO
+                  </span>
+                </div>
+                <div className="text-[10px] font-mono text-zinc-500 hidden sm:block">
+                  Digital Engineering &amp; Software Forge
+                </div>
               </div>
-            </div>
+            </a>
           </div>
 
-          {/* Desktop Nav (Dynamic from navItems, easy to expand in the future) */}
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-7 text-xs font-mono text-zinc-400">
             {navItems.map((item) => (
               <a 
@@ -395,7 +378,7 @@ export default function App() {
 
         {/* Mobile Dropdown Menu Drawer */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-b border-zinc-800/80 bg-[#07090e]/95 backdrop-blur-2xl px-5 py-4 space-y-3 font-mono text-xs animate-fadeIn shadow-2xl">
+          <div className="md:hidden border-b border-zinc-800/80 bg-[#07090e]/95 backdrop-blur-2xl px-5 py-4 space-y-3 font-mono text-xs shadow-2xl">
             <div className="flex flex-col space-y-1.5">
               {navItems.map((item) => (
                 <a
@@ -447,15 +430,15 @@ export default function App() {
         <section className="space-y-6 pt-2 sm:pt-4 text-center sm:text-left max-w-3xl overflow-hidden">
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-md bg-[#0d0f18] border border-zinc-800 text-cyan-400 text-[10px] sm:text-xs font-mono max-w-full overflow-hidden">
             <Zap className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-            <span className="truncate block">{siteSettings.hero?.tagline || 'FORJA INDEPENDIENTE DE SOFTWARE NATIVO & VIDEOJUEGOS'}</span>
+            <span className="truncate block">{siteSettings.hero?.tagline || 'ECOSISTEMA DE SOFTWARE & HERRAMIENTAS DE ESCRITORIO'}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-100 leading-[1.15] break-words">
-            {siteSettings.hero?.title || 'Herramientas nativas, compresión extrema y experiencias de juego.'}
+            {siteSettings.hero?.title || 'Herramientas de escritorio nativas, utilidades de desarrollo y alto rendimiento.'}
           </h1>
 
           <p className="text-zinc-400 text-sm sm:text-lg leading-relaxed max-w-2xl font-normal">
-            {siteSettings.hero?.description || 'Desarrollo independiente sin dependencias infladas. Enfocados en software de alto rendimiento para Windows, seguridad criptográfica Bóveda AES-256, lanzadores de juegos y entornos de ejecución web ligeros.'}
+            {siteSettings.hero?.description || 'Ecosistema independiente de aplicaciones y herramientas de escritorio de alto rendimiento. Software rápido, ligero y enfocado en resolver necesidades reales: diagnóstico de red y puertos, empaquetado y entornos locales de ejecución.'}
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 justify-center sm:justify-start">
@@ -469,10 +452,10 @@ export default function App() {
 
             <a 
               href="#proyectos"
-              className="px-6 py-3 rounded-lg bg-[#0d0f18] hover:bg-[#141724] text-zinc-300 border border-zinc-800 font-mono text-xs transition flex items-center justify-center space-x-2"
+              className="px-6 py-3 rounded-lg bg-[#0d0f18] hover:bg-[#141724] text-zinc-300 border border-zinc-800 font-mono text-xs transition flex items-center justify-center space-x-2 active:scale-95"
             >
-              <Gamepad2 className="w-4 h-4 text-amber-400" />
-              <span>{siteSettings.hero?.buttonProjectsText || 'CATÁLOGO DE PROYECTOS'}</span>
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <span>{siteSettings.hero?.buttonProjectsText || 'CATÁLOGO DE HERRAMIENTAS'}</span>
             </a>
           </div>
 
@@ -487,7 +470,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Software & Apps Disponibles para Descarga (Carousel de un solo item) */}
+        {/* Software & Apps Disponibles para Descarga (Carousel) */}
         <section id="descargas" className="space-y-6 scroll-mt-24 relative">
           <div id="kpm" className="absolute -top-24 pointer-events-none" />
 
@@ -508,7 +491,7 @@ export default function App() {
               <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3">
                 <div className="text-xs font-mono text-zinc-400 bg-zinc-900/90 px-3 py-1.5 rounded-lg border border-zinc-800 flex items-center space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-zinc-200 font-bold">{availableApps[currentAppIndex]?.tag}</span>
+                  <span className="text-zinc-200 font-bold">{availableApps[currentAppIndex]?.tag || `0${currentAppIndex + 1}`}</span>
                   <span className="text-zinc-600">/</span>
                   <span className="text-zinc-500">0{availableApps.length}</span>
                 </div>
@@ -517,7 +500,7 @@ export default function App() {
                   <button
                     onClick={prevApp}
                     aria-label="Aplicación anterior"
-                    title="Anterior aplicación"
+                    title="Anterior aplicación (Flecha Izquierda)"
                     className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -525,7 +508,7 @@ export default function App() {
                   <button
                     onClick={nextApp}
                     aria-label="Siguiente aplicación"
-                    title="Siguiente aplicación"
+                    title="Siguiente aplicación (Flecha Derecha)"
                     className="p-2 rounded-lg bg-[#0c0e17] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition active:scale-95 flex items-center justify-center shadow-sm"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -542,149 +525,173 @@ export default function App() {
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
-            {/* Horizontal Sliding Track */}
-            <div className="overflow-hidden w-full">
-              <div 
-                className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                style={{ transform: `translateX(-${currentAppIndex * 100}%)` }}
-              >
-                {availableApps.map((app) => (
-                  <div 
-                    key={app.id}
-                    className="w-full flex-shrink-0 p-5 sm:p-8 space-y-6"
-                  >
-                    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-center justify-between">
-                      <div className="space-y-4 max-w-2xl">
-                        <div className="flex items-center space-x-3.5">
-                          <div className={`w-14 h-14 rounded-2xl bg-[#0c0e17] border ${app.themeBorder} overflow-hidden flex items-center justify-center shadow-lg flex-shrink-0`}>
-                            <img 
-                              src={app.iconImg} 
-                              alt={app.title} 
-                              className={`w-full h-full object-cover ${app.iconScale}`}
-                              onError={(e) => {
-                                e.currentTarget.src = "/projects/default-app.svg";
+              {/* Horizontal Sliding Track */}
+              <div className="overflow-hidden w-full">
+                <div 
+                  className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                  style={{ transform: `translateX(-${currentAppIndex * 100}%)` }}
+                >
+                  {availableApps.map((app) => (
+                    <div 
+                      key={app.id}
+                      className="w-full flex-shrink-0 p-5 sm:p-8 space-y-6"
+                    >
+                      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-center justify-between">
+                        <div className="space-y-4 max-w-2xl">
+                          <div className="flex items-center space-x-3.5">
+                            <a
+                              href={`/app/${app.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigateTo(`/app/${app.id}`);
                               }}
-                            />
-                          </div>
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-xl font-bold text-zinc-100">{app.title}</h3>
-                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${app.badgeColor}`}>
-                                {app.badge}
-                              </span>
-                            </div>
-                            <p className="text-xs font-mono text-zinc-400 mt-0.5">{app.system}</p>
-                          </div>
-                        </div>
-
-                        <p className="text-zinc-300 text-sm leading-relaxed">
-                          {app.description}
-                        </p>
-
-                        {/* Feature Tags */}
-                        <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
-                          {app.features && app.features.map((feat, idx) => {
-                            const FeatIcon = feat.icon || (feat.iconName && ICON_MAP[feat.iconName]) || Zap;
-                            return (
-                              <div 
-                                key={idx}
-                                className="px-3 py-1.5 rounded-md bg-[#10131e] border border-zinc-800 text-zinc-300 flex items-center space-x-2"
-                              >
-                                <FeatIcon className={`w-3.5 h-3.5 ${feat.color || 'text-cyan-400'}`} />
-                                <span>{feat.label}</span>
+                              className={`w-14 h-14 rounded-2xl bg-[#0c0e17] border ${app.themeBorder || 'border-zinc-800'} overflow-hidden flex items-center justify-center shadow-lg flex-shrink-0 hover:scale-105 transition-transform`}
+                            >
+                              <img 
+                                src={app.iconImg || '/projects/default-app.svg'} 
+                                alt={app.title} 
+                                className={`w-full h-full object-cover ${app.iconScale || ''}`}
+                                onError={(e) => {
+                                  e.currentTarget.src = "/projects/default-app.svg";
+                                }}
+                              />
+                            </a>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <a
+                                  href={`/app/${app.id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    navigateTo(`/app/${app.id}`);
+                                  }}
+                                  className="text-xl font-bold text-zinc-100 hover:text-cyan-300 transition"
+                                >
+                                  {app.title}
+                                </a>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${app.badgeColor || 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30'}`}>
+                                  {app.badge || 'Oficial'}
+                                </span>
                               </div>
-                            );
-                          })}
+                              <p className="text-xs font-mono text-zinc-400 mt-0.5">{app.system}</p>
+                            </div>
+                          </div>
+
+                          <p className="text-zinc-300 text-sm leading-relaxed">
+                            {app.description}
+                          </p>
+
+                          {/* Feature Tags */}
+                          <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
+                            {app.features && app.features.map((feat, idx) => {
+                              const FeatIcon = (feat.iconName && ICON_MAP[feat.iconName]) || Zap;
+                              const label = typeof feat === 'object' ? feat.label : feat;
+                              return (
+                                <div 
+                                  key={idx}
+                                  className="px-3 py-1.5 rounded-md bg-[#10131e] border border-zinc-800 text-zinc-300 flex items-center space-x-2"
+                                >
+                                  <FeatIcon className={`w-3.5 h-3.5 ${feat.color || 'text-cyan-400'}`} />
+                                  <span>{label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Action Box */}
-                      <div className="flex flex-col gap-3 w-full lg:w-72 lg:min-w-[260px] flex-shrink-0 bg-[#07080d] p-4 sm:p-5 rounded-xl border border-zinc-800/80">
-                        <div className="text-xs font-mono text-zinc-400 text-center pb-1 flex items-center justify-center space-x-1.5">
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Descarga oficial verificada</span>
-                        </div>
+                        {/* Action Box with Semantic Crawlable Subpage Links */}
+                        <div className="flex flex-col gap-3 w-full lg:w-72 lg:min-w-[260px] flex-shrink-0 bg-[#07080d] p-4 sm:p-5 rounded-xl border border-zinc-800/80">
+                          <div className="text-xs font-mono text-zinc-400 text-center pb-1 flex items-center justify-center space-x-1.5">
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Descarga oficial verificada</span>
+                          </div>
 
-                        <a
-                          href={app.downloadUrl}
-                          target={app.downloadUrl.startsWith('http') ? '_blank' : '_self'}
-                          rel="noreferrer"
-                          className={`px-5 py-3 rounded-lg ${app.btnBg} font-mono text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg active:scale-95 text-center`}
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>{app.downloadLabel}</span>
-                        </a>
+                          <a
+                            href={app.downloadUrl}
+                            target={app.downloadUrl && app.downloadUrl.startsWith('http') ? '_blank' : '_self'}
+                            rel="noreferrer"
+                            className={`px-5 py-3 rounded-lg ${app.btnBg || 'bg-cyan-500 text-zinc-950'} font-mono text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg active:scale-95 text-center`}
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>{app.downloadLabel || 'DESCARGAR SETUP'}</span>
+                          </a>
 
-                        <button
-                          onClick={() => copyDownloadUrl(app.id, app.downloadUrl)}
-                          className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-mono transition flex items-center justify-center space-x-2 active:scale-95"
-                        >
-                          {copiedAppId === app.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-500" />}
-                          <span>{copiedAppId === app.id ? 'ENLACE COPIADO' : 'COPIAR ENLACE'}</span>
-                        </button>
+                          <button
+                            onClick={() => copyDownloadUrl(app.id, app.downloadUrl)}
+                            className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-mono transition flex items-center justify-center space-x-2 active:scale-95"
+                          >
+                            {copiedAppId === app.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-500" />}
+                            <span>{copiedAppId === app.id ? '¡ENLACE COPIADO!' : 'COPIAR ENLACE'}</span>
+                          </button>
 
-                        <button
-                          onClick={() => navigateTo(`/app/${app.id}`)}
-                          className="px-4 py-2 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono transition flex items-center justify-center space-x-1.5 active:scale-95"
-                        >
-                          <span>Ficha Oficial &amp; Detalles</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
+                          {/* Semantic Crawlable Anchor Tag for Googlebot and Users */}
+                          <a
+                            href={`/app/${app.id}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigateTo(`/app/${app.id}`);
+                            }}
+                            className="px-4 py-2 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono transition flex items-center justify-center space-x-1.5 active:scale-95"
+                          >
+                            <span>Ficha Oficial &amp; Detalles</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </a>
 
-                        <a
-                          href={app.repoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-4 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-[11px] font-mono transition flex items-center justify-center space-x-1.5"
-                        >
-                          <span>Ver repositorio en GitHub</span>
-                          <ExternalLink className="w-3 h-3 text-zinc-500" />
-                        </a>
+                          {app.repoUrl && (
+                            <a
+                              href={app.repoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-4 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-[11px] font-mono transition flex items-center justify-center space-x-1.5"
+                            >
+                              <span>Ver repositorio en GitHub</span>
+                              <ExternalLink className="w-3 h-3 text-zinc-500" />
+                            </a>
+                          )}
 
-                        <div className="text-[10px] font-mono text-zinc-500 text-center pt-1 border-t border-zinc-900">
-                          {app.metaInfo}
+                          <div className="text-[10px] font-mono text-zinc-500 text-center pt-1 border-t border-zinc-900">
+                            {app.metaInfo || 'Instalador verificado y firmado'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Carousel Fast Selector Tabs & Dots (Anchored at the bottom) */}
-            <div className="mx-4 sm:mx-8 py-4 border-t border-zinc-900/90 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-mono text-zinc-500 mr-1 hidden sm:inline">EXPLORAR APPS:</span>
-                {availableApps.map((app, idx) => (
-                  <button
-                    key={app.id}
-                    onClick={() => setCurrentAppIndex(idx)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition flex items-center space-x-2 ${
-                      currentAppIndex === idx
-                        ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
-                        : 'bg-[#090b10] text-zinc-400 border-zinc-900 hover:text-zinc-200 hover:border-zinc-800'
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${currentAppIndex === idx ? 'bg-cyan-400 animate-pulse' : 'bg-zinc-600'}`} />
-                    <span>{app.tag} · {app.shortName}</span>
-                  </button>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Bullet progress indicators */}
-              <div className="flex items-center space-x-2">
-                {availableApps.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentAppIndex(idx)}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      currentAppIndex === idx ? 'w-7 bg-cyan-400' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
-                    }`}
-                    aria-label={`Ir al elemento ${idx + 1}`}
-                  />
-                ))}
+              {/* Carousel Fast Selector Tabs & Dots */}
+              <div className="mx-4 sm:mx-8 py-4 border-t border-zinc-900/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-mono text-zinc-500 mr-1 hidden sm:inline">EXPLORAR APPS:</span>
+                  {availableApps.map((app, idx) => (
+                    <button
+                      key={app.id}
+                      onClick={() => setCurrentAppIndex(idx)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition flex items-center space-x-2 ${
+                        currentAppIndex === idx
+                          ? 'bg-zinc-800 text-zinc-100 border-zinc-700 shadow-sm'
+                          : 'bg-[#090b10] text-zinc-400 border-zinc-900 hover:text-zinc-200 hover:border-zinc-800'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${currentAppIndex === idx ? 'bg-cyan-400 animate-pulse' : 'bg-zinc-600'}`} />
+                      <span>{app.tag || `0${idx + 1}`} · {app.shortName || app.title}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Bullet progress indicators */}
+                <div className="flex items-center space-x-2">
+                  {availableApps.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentAppIndex(idx)}
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        currentAppIndex === idx ? 'w-7 bg-cyan-400' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
+                      }`}
+                      aria-label={`Ir a la aplicación ${idx + 1}`}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
             </div>
           ) : (
             <div className="bg-[#0a0c12] border border-zinc-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
@@ -700,79 +707,70 @@ export default function App() {
             <div>
               <div className="text-xs font-mono text-amber-400 tracking-wider">ECOSISTEMA KYRNFORGE</div>
               <h2 className="text-2xl sm:text-3xl font-bold text-zinc-100 mt-1">
-                Línea de Proyectos & Videojuegos
+                Catálogo de Software &amp; Herramientas
               </h2>
             </div>
 
-            {/* Filter Tabs */}
+            {/* Filter Tabs (Derivado dinámicamente sin categorías vacías) */}
             <div className="flex flex-wrap gap-1.5 p-1 rounded-lg bg-[#0a0c12] border border-zinc-900 font-mono text-xs">
-              <button
-                onClick={() => setProjectFilter('all')}
-                className={`px-3 py-1.5 rounded-md transition ${projectFilter === 'all' ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                Todos ({projects.length})
-              </button>
-              <button
-                onClick={() => setProjectFilter('gaming')}
-                className={`px-3 py-1.5 rounded-md transition ${projectFilter === 'gaming' ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                Gaming ({projects.filter(p => p.category === 'gaming').length})
-              </button>
-              <button
-                onClick={() => setProjectFilter('tools')}
-                className={`px-3 py-1.5 rounded-md transition ${projectFilter === 'tools' ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                Herramientas & Web
-              </button>
+              {categoryFilters.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setProjectFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-md transition ${projectFilter === tab.id ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {filteredProjects.map((p) => {
-              const IconComponent = p.icon;
-              return (
+              {filteredProjects.map((p) => (
                 <div 
                   key={p.id}
-                  className="bg-[#090b10] border border-zinc-900 hover:border-zinc-800 rounded-xl p-5 sm:p-6 space-y-4 transition duration-200 flex flex-col justify-between"
+                  className="bg-[#090b10] border border-zinc-900 hover:border-zinc-800 rounded-xl p-5 sm:p-6 space-y-4 transition duration-200 flex flex-col justify-between group"
                 >
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3">
                       <div className="flex items-center space-x-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-[#0c0e17] border border-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm relative group-hover:border-zinc-700 transition">
-                          {p.iconImg ? (
-                            <img 
-                              src={p.iconImg} 
-                              alt={p.title} 
-                              className={`w-full h-full object-cover ${p.id === 'kpm' ? 'scale-[1.12]' : ''} ${p.id === '2dgo' ? '[image-rendering:pixelated]' : ''}`}
-                              onError={(e) => {
-                                e.currentTarget.src = "/projects/default-app.svg";
-                              }}
-                            />
-                          ) : (
-                            <img 
-                              src="/projects/default-app.svg" 
-                              alt="Default App Icon" 
-                              className="w-full h-full object-cover opacity-85" 
-                              title="Icono por defecto (en diseño)"
-                            />
-                          )}
-                        </div>
+                        <a
+                          href={`/app/${p.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigateTo(`/app/${p.id}`);
+                          }}
+                          className="w-12 h-12 rounded-xl bg-[#0c0e17] border border-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm group-hover:border-zinc-700 transition"
+                        >
+                          <img 
+                            src={p.iconImg || "/projects/default-app.svg"} 
+                            alt={p.title} 
+                            className={`w-full h-full object-cover ${p.id === 'kpm' ? 'scale-[1.12]' : ''}`}
+                            onError={(e) => {
+                              e.currentTarget.src = "/projects/default-app.svg";
+                            }}
+                          />
+                        </a>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <h4 className="text-base font-bold text-zinc-100">{p.title}</h4>
-                            {!p.iconImg && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/50" title="Este proyecto usa el icono por defecto">
-                                Icono base
-                              </span>
-                            )}
+                            <a
+                              href={`/app/${p.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigateTo(`/app/${p.id}`);
+                              }}
+                              className="text-base font-bold text-zinc-100 hover:text-cyan-300 transition"
+                            >
+                              {p.title}
+                            </a>
                           </div>
-                          <span className="text-[11px] font-mono text-zinc-500">{p.categoryLabel}</span>
+                          <span className="text-[11px] font-mono text-zinc-500">{p.categoryLabel || p.category}</span>
                         </div>
                       </div>
 
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border self-start sm:self-auto whitespace-nowrap ${p.badgeColor}`}>
-                        {p.statusLabel}
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border self-start sm:self-auto whitespace-nowrap ${p.badgeColor || 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30'}`}>
+                        {p.statusLabel || 'Oficial'}
                       </span>
                     </div>
 
@@ -791,13 +789,18 @@ export default function App() {
                     </div>
 
                     <div className="pt-1 flex items-center justify-between">
-                      <button 
-                        onClick={() => navigateTo(`/app/${p.id}`)}
-                        className="inline-flex items-center space-x-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition group"
+                      {/* Semantic Crawlable Anchor Tag for Googlebot and Users */}
+                      <a 
+                        href={`/app/${p.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigateTo(`/app/${p.id}`);
+                        }}
+                        className="inline-flex items-center space-x-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 transition group/link"
                       >
                         <span>Ver Ficha Oficial</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </button>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform" />
+                      </a>
 
                       {p.repoUrl && (
                         <a 
@@ -813,8 +816,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              ))}
             </div>
           ) : (
             <div className="bg-[#0a0c12] border border-zinc-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
@@ -910,12 +912,12 @@ export default function App() {
           <div className="flex items-center space-x-2">
             <span className="font-bold text-zinc-300">KYRNFORGE</span>
             <span>·</span>
-            <span>Digital Engineering & Software Forge</span>
+            <span>Digital Engineering &amp; Software Forge</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-4 sm:gap-6">
-            <a href="https://github.com/devlwte/kpm-studio/blob/main/LICENSE" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition">
-              Licencia KPM
+            <a href="https://github.com/devlwte/kyrn-devdock/blob/main/LICENSE" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition">
+              Licencia Oficial
             </a>
             <a href="https://github.com/devlwte" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition">
               GitHub (@devlwte)
@@ -923,7 +925,7 @@ export default function App() {
             <button
               onClick={() => navigateTo('/mod')}
               className="hover:text-cyan-400 text-zinc-600 transition flex items-center space-x-1"
-              title="Panel de Gestión & Mod (/mod)"
+              title="Panel de Gestión &amp; Mod (/mod)"
             >
               <Key className="w-3 h-3" />
               <span>/MOD</span>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Shield, 
   Terminal, 
@@ -9,22 +9,20 @@ import {
   Gamepad2, 
   Code2, 
   Package, 
-  Activity,
-  ArrowRight,
-  Zap,
-  ShoppingBag,
-  Sparkles,
-  Server,
-  Key,
-  Globe2,
-  CheckCircle,
-  Copy,
-  Check,
-  ChevronLeft,
-  Share2,
-  Info,
-  Clock,
-  ArrowLeft
+  Activity, 
+  ArrowRight, 
+  Zap, 
+  ShoppingBag, 
+  Sparkles, 
+  Server, 
+  Key, 
+  Globe2, 
+  CheckCircle, 
+  Check, 
+  ChevronLeft, 
+  Share2, 
+  Info, 
+  ArrowLeft 
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -48,41 +46,49 @@ const ICON_MAP = {
 export default function AppDetailView({ appId, availableApps = [], projects = [], onNavigateHome, onNavigateApp }) {
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Search app in availableApps first, then in projects catalog
-  const appInCarousel = availableApps.find(a => a.id === appId || a.id === appId.toLowerCase());
-  const projectInCatalog = projects.find(p => p.id === appId || p.id === appId.toLowerCase());
+  // Search app in availableApps first, then in projects catalog (memoized)
+  const app = useMemo(() => {
+    const appInCarousel = availableApps.find(a => a.id === appId || (a.id && a.id.toLowerCase() === (appId || "").toLowerCase()));
+    if (appInCarousel) return appInCarousel;
 
-  // Merge attributes to get the richest possible representation
-  const app = appInCarousel || (projectInCatalog ? {
-    id: projectInCatalog.id,
-    title: projectInCatalog.title,
-    shortName: projectInCatalog.title,
-    category: projectInCatalog.categoryLabel || 'Herramienta de Escritorio',
-    badge: projectInCatalog.statusLabel || 'v1.0.0 Oficial',
-    badgeColor: projectInCatalog.badgeColor || 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
-    description: projectInCatalog.description,
-    iconImg: projectInCatalog.iconImg || '/projects/default-app.svg',
-    downloadUrl: projectInCatalog.downloadUrl || (projectInCatalog.repoUrl ? `${projectInCatalog.repoUrl}/releases` : null),
-    repoUrl: projectInCatalog.repoUrl || null,
-    features: (projectInCatalog.tags || []).map(tag => ({
-      label: tag,
-      iconName: 'Zap',
-      color: 'text-cyan-400'
-    })),
-    glowClass: 'glow-emerald',
-    themeBorder: 'border-emerald-500/40',
-    btnBg: 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/25',
-    accentText: 'text-emerald-400'
-  } : null);
+    const projectInCatalog = projects.find(p => p.id === appId || (p.id && p.id.toLowerCase() === (appId || "").toLowerCase()));
+    if (!projectInCatalog) return null;
 
-  // Update client document title on mount / change
+    return {
+      id: projectInCatalog.id,
+      title: projectInCatalog.title,
+      shortName: projectInCatalog.title,
+      category: projectInCatalog.categoryLabel || 'Herramienta de Escritorio',
+      badge: projectInCatalog.statusLabel || 'v1.0.0 Oficial',
+      badgeColor: projectInCatalog.badgeColor || 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30',
+      description: projectInCatalog.description,
+      iconImg: projectInCatalog.iconImg || '/projects/default-app.svg',
+      downloadUrl: projectInCatalog.downloadUrl || (projectInCatalog.repoUrl ? `${projectInCatalog.repoUrl}/releases` : null),
+      repoUrl: projectInCatalog.repoUrl || null,
+      features: (projectInCatalog.tags || []).map(tag => ({
+        label: tag,
+        iconName: 'Zap',
+        color: 'text-cyan-400'
+      })),
+      glowClass: 'glow-emerald',
+      themeBorder: 'border-emerald-500/40',
+      btnBg: 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/25',
+      accentText: 'text-emerald-400'
+    };
+  }, [appId, availableApps, projects]);
+
+  // Update client document title on mount / restore on unmount
   useEffect(() => {
     if (app && app.title) {
       document.title = `${app.title} · Ecosistema de Software KyrnForge`;
     } else {
-      document.title = 'App no encontrada · KyrnForge';
+      document.title = 'Aplicación no encontrada · KyrnForge';
     }
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    return () => {
+      document.title = 'KyrnForge · Ecosistema de Software & Herramientas de Escritorio';
+    };
   }, [app]);
 
   const handleCopyLink = () => {
@@ -98,21 +104,25 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
 
   if (!app) {
     return (
-      <div className="min-h-screen bg-[#06070a] text-zinc-100 font-sans flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-4">
-          <Info className="w-8 h-8" />
+      <div className="min-h-screen bg-[#06070a] text-zinc-100 font-sans flex flex-col items-center justify-center p-6 text-center selection:bg-cyan-500/20 selection:text-cyan-300">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-4 shadow-inner">
+          <Info className="w-8 h-8 text-cyan-400" />
         </div>
         <h1 className="text-2xl font-bold font-mono text-zinc-100 mb-2">Aplicación no encontrada</h1>
         <p className="text-sm text-zinc-400 max-w-md mb-6">
-          No existe ninguna aplicación registrada con el identificador <code className="text-cyan-400 font-mono bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">/app/{appId}</code>.
+          No existe ninguna aplicación registrada en el ecosistema con el identificador <code className="text-cyan-400 font-mono bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">/app/{appId}</code>.
         </p>
-        <button
-          onClick={onNavigateHome}
-          className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-2"
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigateHome();
+          }}
+          className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-cyan-500/25 active:scale-95"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Volver al Catálogo Oficial</span>
-        </button>
+        </a>
       </div>
     );
   }
@@ -130,29 +140,33 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#06070a]/90 border-b border-zinc-900/80 w-full">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           
-          <div className="flex items-center space-x-3 min-w-0">
-            <button
-              onClick={onNavigateHome}
+          <nav className="flex items-center space-x-3 min-w-0" aria-label="Breadcrumb">
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigateHome();
+              }}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-xs transition active:scale-95 flex-shrink-0"
               title="Volver a la página principal"
             >
               <ChevronLeft className="w-4 h-4 text-zinc-400" />
-              <span className="hidden sm:inline">Ecosistema</span>
-            </button>
+              <span>Ecosistema</span>
+            </a>
 
-            <span className="text-zinc-600 font-mono text-xs hidden sm:inline">/</span>
+            <span className="text-zinc-600 font-mono text-xs">/</span>
 
             <div className="flex items-center space-x-2 truncate">
               <span className="font-mono text-xs text-zinc-400 hidden sm:inline">Apps</span>
               <span className="text-zinc-600 font-mono text-xs hidden sm:inline">/</span>
               <span className="font-mono font-bold text-xs sm:text-sm text-zinc-100 truncate">{app.title}</span>
             </div>
-          </div>
+          </nav>
 
           <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
             <button
               onClick={handleCopyLink}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-xs transition"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-mono text-xs transition active:scale-95 shadow-sm"
               title="Copiar enlace directo a esta app"
             >
               {copiedLink ? (
@@ -175,7 +189,7 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-12 sm:space-y-16">
 
         {/* HERO SECTION */}
-        <section className="p-6 sm:p-10 rounded-3xl bg-[#080b12] border border-zinc-800/90 relative overflow-hidden shadow-2xl">
+        <section className={`p-6 sm:p-10 rounded-3xl bg-[#080b12] border ${app.themeBorder || 'border-zinc-800/90'} relative overflow-hidden shadow-2xl ${app.glowClass || ''}`}>
           
           {/* Subtle background decoration */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -187,7 +201,7 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
               <img 
                 src={app.iconImg || '/projects/default-app.svg'} 
                 alt={`${app.title} Icon`}
-                className="w-full h-full object-cover filter drop-shadow group-hover:scale-105 transition-transform duration-300"
+                className={`w-full h-full object-cover filter drop-shadow group-hover:scale-105 transition-transform duration-300 ${app.iconScale || ''}`}
                 onError={(e) => {
                   e.currentTarget.src = "/projects/default-app.svg";
                 }}
@@ -271,20 +285,21 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {app.features.map((feat, idx) => {
-                const IconComponent = ICON_MAP[feat.iconName] || Zap;
+                const IconComponent = (feat.iconName && ICON_MAP[feat.iconName]) || Zap;
+                const label = typeof feat === 'object' ? feat.label : feat;
                 return (
                   <div
                     key={idx}
-                    className="p-5 rounded-2xl bg-[#080b12] border border-zinc-800/80 hover:border-zinc-700/90 transition-all space-y-2 group"
+                    className="p-5 rounded-2xl bg-[#080b12] border border-zinc-800/80 hover:border-zinc-700/90 transition-all space-y-2 group shadow-sm"
                   >
                     <div className="w-9 h-9 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                       <IconComponent className={`w-4 h-4 ${feat.color || 'text-cyan-400'}`} />
                     </div>
                     <h3 className="font-mono text-sm font-bold text-zinc-100">
-                      {feat.label}
+                      {label}
                     </h3>
                     <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                      Optimizado y probado exhaustivamente para un rendimiento confiable y baja latencia.
+                      Optimizado y probado exhaustivamente para un rendimiento confiable y baja latencia en entornos Windows.
                     </p>
                   </div>
                 );
@@ -317,20 +332,20 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-900 space-y-1">
-              <span className="text-[10px] font-mono text-zinc-500 uppercase block">Infraestructura</span>
-              <span className="text-xs font-mono font-bold text-purple-400">Cloudflare Edge Sync</span>
+              <span className="text-[10px] font-mono text-zinc-500 uppercase block">Plataforma</span>
+              <span className="text-xs font-mono font-bold text-purple-400">Windows 10 / Windows 11</span>
             </div>
           </div>
 
           <div className="text-xs text-zinc-400 font-sans leading-relaxed border-t border-zinc-800/80 pt-4 flex items-start space-x-3">
             <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
             <span>
-              <strong>Soberanía Local Garantizada:</strong> Esta aplicación no transmite código fuente, variables de entorno ni datos que transiten por tus sockets. La ejecución y diagnóstico se procesan exclusivamente en tu procesador local.
+              <strong>Soberanía Local Garantizada:</strong> Esta aplicación no transmite código fuente, variables de entorno ni credenciales a servidores externos. Los diagnósticos y procesos se ejecutan directamente en el hardware local.
             </span>
           </div>
         </section>
 
-        {/* RELATED APPS / EXPLORE MORE */}
+        {/* RELATED APPS / EXPLORE MORE WITH SEMANTIC CRAWLABLE LINKS */}
         {relatedApps.length > 0 && (
           <section className="space-y-4 pt-4">
             <h2 className="text-sm font-mono text-zinc-400 uppercase tracking-wider flex items-center space-x-2">
@@ -340,17 +355,21 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {relatedApps.map((rel) => (
-                <button
+                <a
                   key={rel.id}
-                  onClick={() => onNavigateApp(rel.id)}
-                  className="p-5 rounded-2xl bg-[#080b12] hover:bg-[#0c101a] border border-zinc-800/80 hover:border-zinc-700 transition text-left space-y-3 group"
+                  href={`/app/${rel.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigateApp(rel.id);
+                  }}
+                  className="p-5 rounded-2xl bg-[#080b12] hover:bg-[#0c101a] border border-zinc-800/80 hover:border-zinc-700 transition text-left space-y-3 group block"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-11 h-11 rounded-xl bg-[#0c101c] border border-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm">
                       <img 
                         src={rel.iconImg || '/projects/default-app.svg'} 
                         alt={rel.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
+                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 ${rel.iconScale || ''}`} 
                         onError={(e) => {
                           e.currentTarget.src = "/projects/default-app.svg";
                         }}
@@ -372,7 +391,7 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
                     <span>Ver Ficha Oficial</span>
                     <ArrowRight className="w-3 h-3" />
                   </div>
-                </button>
+                </a>
               ))}
             </div>
           </section>
@@ -385,7 +404,16 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
         <div className="max-w-6xl mx-auto px-4 space-y-2">
           <p>© 2026 KyrnForge · Ecosistema Independiente de Herramientas de Escritorio</p>
           <div className="flex justify-center items-center space-x-4">
-            <button onClick={onNavigateHome} className="hover:text-zinc-300 transition">Inicio</button>
+            <a 
+              href="/" 
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigateHome();
+              }}
+              className="hover:text-zinc-300 transition"
+            >
+              Inicio
+            </a>
             <span>•</span>
             <a href="https://github.com/devlwte" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-300 transition">GitHub</a>
             <span>•</span>

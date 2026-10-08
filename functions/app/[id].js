@@ -95,9 +95,13 @@ export async function onRequestGet(context) {
     // Pre-rendered semantic HTML for Googlebot and instant initial paint
     const featuresList = (app.features || []).map(f => {
       const label = typeof f === 'object' ? f.label : f;
-      return `<li class="p-4 rounded-xl bg-[#080b12] border border-zinc-800 text-zinc-300 text-xs font-mono flex items-center space-x-2">
-        <span class="text-cyan-400 font-bold">✓</span>
-        <span>${escapeHtml(label)}</span>
+      const desc = typeof f === 'object' && f.description ? String(f.description).trim() : '';
+      return `<li class="p-4 rounded-xl bg-[#080b12] border border-zinc-800 text-zinc-300 text-xs font-mono space-y-1">
+        <div class="flex items-center space-x-2 font-bold text-zinc-100">
+          <span class="text-cyan-400">✓</span>
+          <span>${escapeHtml(label)}</span>
+        </div>
+        ${desc ? `<p class="text-[11px] text-zinc-400 font-sans leading-relaxed pl-5">${escapeHtml(desc)}</p>` : ''}
       </li>`;
     }).join('');
 

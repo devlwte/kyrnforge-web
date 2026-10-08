@@ -66,9 +66,10 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
       downloadUrl: projectInCatalog.downloadUrl || (projectInCatalog.repoUrl ? `${projectInCatalog.repoUrl}/releases` : null),
       repoUrl: projectInCatalog.repoUrl || null,
       features: (projectInCatalog.tags || []).map(tag => ({
-        label: tag,
-        iconName: 'Zap',
-        color: 'text-cyan-400'
+        label: typeof tag === 'object' ? tag.label : tag,
+        description: typeof tag === 'object' && tag.description ? tag.description : '',
+        iconName: typeof tag === 'object' && tag.iconName ? tag.iconName : 'Zap',
+        color: typeof tag === 'object' && tag.color ? tag.color : 'text-cyan-400'
       })),
       glowClass: 'glow-emerald',
       themeBorder: 'border-emerald-500/40',
@@ -287,20 +288,28 @@ export default function AppDetailView({ appId, availableApps = [], projects = []
               {app.features.map((feat, idx) => {
                 const IconComponent = (feat.iconName && ICON_MAP[feat.iconName]) || Zap;
                 const label = typeof feat === 'object' ? feat.label : feat;
+                const description = typeof feat === 'object' && feat.description ? String(feat.description).trim() : '';
+
                 return (
                   <div
                     key={idx}
-                    className="p-5 rounded-2xl bg-[#080b12] border border-zinc-800/80 hover:border-zinc-700/90 transition-all space-y-2 group shadow-sm"
+                    className={`p-5 rounded-2xl bg-[#080b12] border border-zinc-800/80 hover:border-zinc-700/90 transition-all space-y-2 group shadow-sm flex flex-col ${
+                      description ? 'justify-between' : 'justify-center'
+                    }`}
                   >
-                    <div className="w-9 h-9 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                      <IconComponent className={`w-4 h-4 ${feat.color || 'text-cyan-400'}`} />
+                    <div className="space-y-2">
+                      <div className="w-9 h-9 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <IconComponent className={`w-4 h-4 ${feat.color || 'text-cyan-400'}`} />
+                      </div>
+                      <h3 className="font-mono text-sm font-bold text-zinc-100">
+                        {label}
+                      </h3>
                     </div>
-                    <h3 className="font-mono text-sm font-bold text-zinc-100">
-                      {label}
-                    </h3>
-                    <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                      Optimizado y probado exhaustivamente para un rendimiento confiable y baja latencia en entornos Windows.
-                    </p>
+                    {description ? (
+                      <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                        {description}
+                      </p>
+                    ) : null}
                   </div>
                 );
               })}

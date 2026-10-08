@@ -631,7 +631,7 @@ export default function ModDashboard({ onNavigateHome }) {
           iconName = 'Cpu';
           color = 'text-cyan-400';
         }
-        return { label: tagText, iconName, color };
+        return { label: tagText, description: '', iconName, color };
       });
     }
 
@@ -732,9 +732,9 @@ export default function ModDashboard({ onNavigateHome }) {
       accentText: 'text-cyan-400',
       description: 'Descripción detallada de la aplicación, utilidades clave y arquitectura de compresión o renderizado.',
       features: [
-        { label: 'Característica 1', iconName: 'Shield', color: 'text-cyan-400' },
-        { label: 'Característica 2', iconName: 'Zap', color: 'text-emerald-400' },
-        { label: 'Característica 3', iconName: 'Cpu', color: 'text-purple-400' }
+        { label: 'Característica 1', description: '', iconName: 'Shield', color: 'text-cyan-400' },
+        { label: 'Característica 2', description: '', iconName: 'Zap', color: 'text-emerald-400' },
+        { label: 'Característica 3', description: '', iconName: 'Cpu', color: 'text-purple-400' }
       ],
       downloadUrl: 'https://github.com/devlwte',
       downloadLabel: 'DESCARGAR SETUP (.ZIP)',
@@ -779,7 +779,7 @@ export default function ModDashboard({ onNavigateHome }) {
     const currentFeatures = Array.isArray(editingApp.features) ? editingApp.features : [];
     const updatedFeatures = [
       ...currentFeatures,
-      { label: 'Nueva Característica', iconName: 'Zap', color: 'text-cyan-400' }
+      { label: 'Nueva Característica', description: '', iconName: 'Zap', color: 'text-cyan-400' }
     ];
     const updatedApp = { ...editingApp, features: updatedFeatures };
     setEditingApp(updatedApp);
@@ -2613,42 +2613,51 @@ export default function ModDashboard({ onNavigateHome }) {
                         </div>
                       )}
                       {editingApp.features && editingApp.features.map((feat, idx) => (
-                        <div key={idx} className="p-2.5 rounded-lg bg-[#050608] border border-zinc-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div key={idx} className="p-2.5 rounded-lg bg-[#050608] border border-zinc-800 flex flex-col gap-2">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <input
+                              type="text"
+                              value={feat.label}
+                              onChange={(e) => handleUpdateFeature(idx, 'label', e.target.value)}
+                              placeholder="Ej: Cifrado Bóveda AES-256"
+                              className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded px-2.5 py-1 text-xs font-mono text-zinc-200"
+                            />
+                            <div className="flex items-center space-x-1.5">
+                              <select
+                                value={feat.iconName || 'Zap'}
+                                onChange={(e) => handleUpdateFeature(idx, 'iconName', e.target.value)}
+                                className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                              >
+                                {AVAILABLE_FEATURE_ICONS.map(icon => (
+                                  <option key={icon} value={icon}>{icon}</option>
+                                ))}
+                              </select>
+                              <select
+                                value={feat.color || 'text-cyan-400'}
+                                onChange={(e) => handleUpdateFeature(idx, 'color', e.target.value)}
+                                className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
+                              >
+                                {AVAILABLE_FEATURE_COLORS.map(col => (
+                                  <option key={col.value} value={col.value}>{col.label}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFeature(idx)}
+                                className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 transition"
+                                title="Eliminar este tag"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
                           <input
                             type="text"
-                            value={feat.label}
-                            onChange={(e) => handleUpdateFeature(idx, 'label', e.target.value)}
-                            placeholder="Ej: Cifrado Bóveda AES-256"
-                            className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded px-2.5 py-1 text-xs font-mono text-zinc-200"
+                            value={feat.description || ''}
+                            onChange={(e) => handleUpdateFeature(idx, 'description', e.target.value)}
+                            placeholder="Descripción opcional (si está vacía, solo se muestra el título en la ficha)"
+                            className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded px-2.5 py-1 text-[11px] font-sans text-zinc-300 placeholder:text-zinc-600 focus:border-cyan-500/50 focus:outline-none"
                           />
-                          <div className="flex items-center space-x-1.5">
-                            <select
-                              value={feat.iconName || 'Zap'}
-                              onChange={(e) => handleUpdateFeature(idx, 'iconName', e.target.value)}
-                              className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
-                            >
-                              {AVAILABLE_FEATURE_ICONS.map(icon => (
-                                <option key={icon} value={icon}>{icon}</option>
-                              ))}
-                            </select>
-                            <select
-                              value={feat.color || 'text-cyan-400'}
-                              onChange={(e) => handleUpdateFeature(idx, 'color', e.target.value)}
-                              className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-300"
-                            >
-                              {AVAILABLE_FEATURE_COLORS.map(col => (
-                                <option key={col.value} value={col.value}>{col.label}</option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFeature(idx)}
-                              className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 transition"
-                              title="Eliminar este tag"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
                         </div>
                       ))}
                     </div>

@@ -18,21 +18,25 @@
     "features": [
       {
         "label": "Local Web Runtime",
+        "description": "Entorno ligero para ejecutar y desplegar aplicaciones web en tu entorno local sin configuraciones complejas.",
         "iconName": "Server",
         "color": "text-purple-400"
       },
       {
         "label": "DynExpress Core",
+        "description": "Motor interno de alto rendimiento para orquestar microservicios y APIs locales al instante.",
         "iconName": "Layers",
         "color": "text-purple-400"
       },
       {
         "label": "Manager de Servidores",
+        "description": "Panel de control para inicializar, reiniciar y monitorear múltiples instancias de servidores simultáneamente.",
         "iconName": "Zap",
         "color": "text-cyan-400"
       },
       {
         "label": "Cero Configuración",
+        "description": "Listo para operar desde el primer segundo sin dependencias externas pesadas ni configuraciones tediosas.",
         "iconName": "Zap",
         "color": "text-cyan-400"
       }
@@ -62,16 +66,19 @@
     "features": [
       {
         "label": "Cifrado Bóveda AES-256",
+        "description": "Protección criptográfica militar AES-256-GCM con blindaje Anti-Tamper para paquetes y archivos confidenciales.",
         "iconName": "Shield",
         "color": "text-cyan-400"
       },
       {
         "label": "Brotli Ultra & Deflate 9",
+        "description": "Compresión extrema que reduce drásticamente el tamaño de binarios e imágenes crudas sin pérdida de integridad.",
         "iconName": "Layers",
         "color": "text-emerald-400"
       },
       {
         "label": "Bytecode V8 Blindado",
+        "description": "Protección y ofuscación de código contra ingeniería inversa y manipulaciones no autorizadas.",
         "iconName": "Cpu",
         "color": "text-purple-400"
       }
@@ -101,21 +108,25 @@
     "features": [
       {
         "label": "Port Sentinel",
+        "description": "Centinela activo de sockets TCP/UDP con monitoreo continuo en segundo plano.",
         "iconName": "Zap",
         "color": "text-cyan-400"
       },
       {
         "label": "Network Diagnostics",
+        "description": "Inspección detallada del tráfico local, interfaces de red y puertos abiertos en tiempo real.",
         "iconName": "Activity",
         "color": "text-cyan-400"
       },
       {
         "label": "Tauri v2 & Rust",
+        "description": "Núcleo nativo de ultrabaja huella de memoria (menos de 30MB de RAM) y máxima velocidad de procesamiento.",
         "iconName": "Cpu",
         "color": "text-cyan-400"
       },
       {
         "label": "Zombie Hunter Killer",
+        "description": "Detección y terminación segura de procesos huérfanos que bloquean puertos de desarrollo.",
         "iconName": "Terminal",
         "color": "text-cyan-400"
       }

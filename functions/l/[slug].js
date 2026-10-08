@@ -114,6 +114,10 @@ export async function onRequest(context) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7360347214525511"
+     crossorigin="anonymous"></script>
+  
   <style>
     :root[data-theme="dark"] {
       --bg: #090d16;

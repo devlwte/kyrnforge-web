@@ -1,10 +1,10 @@
 // /api/v1/skins
-//   GET              galería de aspectos recientes
-//   POST   (sesión)  subir o reemplazar el aspecto de un nombre: { name, model, png }
-//   DELETE (sesión)  borrar el aspecto propio y liberar el nombre
+//   GET                     galería de aspectos recientes
+//   POST   (sesión)         publicar un nombre nuevo o cambiar uno propio: { name, model, png }
+//   DELETE (sesión) ?name=  borrar uno de tus aspectos y liberar su nombre
 import {
-  MAX_PNG_BYTES, NAME_RE, RECENT_LIMIT, base64ToBytes, currentUser, fail, getKv, inspectPng, json, keys,
-  mojangProfile, offlineUuid, preflight, publicSkin, readJson, sha256Hex,
+  MAX_PNG_BYTES, MAX_SKINS_PER_USER, NAME_RE, RECENT_LIMIT, UPLOADS_PER_MINUTE, base64ToBytes, currentUser, fail,
+  getKv, inspectPng, json, keys, mojangProfile, offlineUuid, preflight, publicSkin, readJson, sha256Hex, userNames,
 } from "./skin-utils.js";
 
 export const onRequestOptions = preflight;
@@ -23,9 +23,10 @@ export async function onRequestPost({ request, env }) {
   const kv = getKv(env);
   if (!kv) return fail("Almacenamiento no disponible.", 503);
   const user = await currentUser(request, env);
-  if (!user) return fail("Inicia sesión para subir tu aspecto.", 401);
+  if (!user) return fail("Inicia sesión para subir aspectos.", 401);
 
-  if (await kv.get(keys.rate(user.sub))) return fail("Espera un minuto antes de volver a subir.", 429);
+  const uploads = Number(await kv.get(keys.rate(user.sub))) || 0;
+  if (uploads >= UPLOADS_PER_MINUTE) return fail("Demasiadas subidas seguidas. Espera un minuto.", 429);
 
   const body = await request.json().catch(() => ({}));
   const name = String(body.name || "").trim();
@@ -46,7 +47,11 @@ export async function onRequestPost({ request, env }) {
   const existing = await readJson(kv, keys.name(lower));
   if (existing && existing.owner !== user.sub) return fail("Ese nombre ya tiene dueño en KyrnForge Skins.", 409);
 
+  const mine = await userNames(kv, user.sub);
   if (!existing) {
+    if (mine.length >= MAX_SKINS_PER_USER) {
+      return fail(`Puedes tener hasta ${MAX_SKINS_PER_USER} aspectos. Borra uno para publicar otro.`, 409);
+    }
     let premium;
     try {
       premium = await mojangProfile(name);
@@ -58,28 +63,24 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  // Un nombre por cuenta: si la cuenta tenía otro, se libera.
-  const previous = await kv.get(keys.user(user.sub));
-  if (previous && previous !== lower) await releaseName(kv, previous);
-
   const hash = await sha256Hex(png);
   const now = new Date().toISOString();
   const uuid = offlineUuid(name);
   const record = {
-    name, model, hash, uuid, owner: user.sub,
+    name: existing?.name || name, model, hash, uuid, owner: user.sub,
     createdAt: existing?.createdAt || now, updatedAt: now,
   };
   await kv.put(keys.png(hash), png);
   await kv.put(keys.name(lower), JSON.stringify(record));
   await kv.put(keys.uuid(uuid), lower);
-  await kv.put(keys.user(user.sub), lower);
-  await kv.put(keys.rate(user.sub), "1", { expirationTtl: 60 });
+  if (!mine.includes(lower)) await kv.put(keys.user(user.sub), JSON.stringify([...mine, lower]));
+  await kv.put(keys.rate(user.sub), String(uploads + 1), { expirationTtl: 60 });
 
   const recent = (await readJson(kv, keys.recent, [])).filter((r) => r.name.toLowerCase() !== lower);
   recent.unshift(record);
   await kv.put(keys.recent, JSON.stringify(recent.slice(0, RECENT_LIMIT)));
 
-  return json({ success: true, skin: publicSkin(record, new URL(request.url).origin) }, 201);
+  return json({ success: true, created: !existing, skin: publicSkin(record, new URL(request.url).origin) }, existing ? 200 : 201);
 }
 
 export async function onRequestDelete({ request, env }) {
@@ -87,10 +88,11 @@ export async function onRequestDelete({ request, env }) {
   if (!kv) return fail("Almacenamiento no disponible.", 503);
   const user = await currentUser(request, env);
   if (!user) return fail("Inicia sesión.", 401);
-  const lower = await kv.get(keys.user(user.sub));
-  if (!lower) return fail("No tienes ningún aspecto publicado.", 404);
+  const lower = (new URL(request.url).searchParams.get("name") || "").toLowerCase();
+  const mine = await userNames(kv, user.sub);
+  if (!lower || !mine.includes(lower)) return fail("Ese aspecto no es tuyo.", 404);
   await releaseName(kv, lower);
-  await kv.delete(keys.user(user.sub));
+  await kv.put(keys.user(user.sub), JSON.stringify(mine.filter((n) => n !== lower)));
   return json({ success: true });
 }
 

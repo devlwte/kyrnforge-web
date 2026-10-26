@@ -4,7 +4,7 @@
 //         { action: "dismiss", name } descarta sus denuncias
 import { isAdmin } from "../auth/admin-utils.js";
 import { releaseName } from "./index.js";
-import { fail, getKv, json, keys, preflight, publicSkin, readJson } from "./skin-utils.js";
+import { fail, getKv, json, keys, preflight, publicSkin, readJson, userNames } from "./skin-utils.js";
 
 export const onRequestOptions = preflight;
 
@@ -46,7 +46,10 @@ export async function onRequestPost({ request, env }) {
   if (body.action === "remove") {
     const record = await readJson(kv, keys.name(lower));
     await releaseName(kv, lower);
-    if (record?.owner) await kv.delete(keys.user(record.owner));
+    if (record?.owner) {
+      const remaining = (await userNames(kv, record.owner)).filter((n) => n !== lower);
+      await kv.put(keys.user(record.owner), JSON.stringify(remaining));
+    }
   } else if (body.action !== "dismiss") {
     return fail("Acción no válida.");
   }

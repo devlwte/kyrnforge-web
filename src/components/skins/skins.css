@@ -1,0 +1,83 @@
+/* KyrnForge Skins: temática de bloques (texturas CC0 de Kenney y fuente Monocraft, OFL). */
+@font-face { font-family: "Monocraft"; src: url(/skins-assets/monocraft.woff2) format("woff2"); font-display: swap; }
+
+.mcs {
+  --mc-yellow: #ffff55; --mc-green: #55ff55; --mc-red: #ff5555; --mc-muted: #bdbdbd; --mc-dim: #8a8a8a;
+  --mc-stone: #727272; --mc-stone-hi: #a8a8a8; --mc-stone-lo: #4a4a4a;
+  --mc-grass: #3c8527; --mc-grass-hi: #5db33f; --mc-grass-lo: #24561a;
+  --mc-pixel: "Monocraft", "Courier New", monospace;
+  min-height: 100vh; color: #fff; display: flex; flex-direction: column;
+  background-color: #3b2a1e;
+  background-image: linear-gradient(rgba(0, 0, 0, .62), rgba(0, 0, 0, .62)), url(/skins-assets/dirt.png);
+  background-size: auto, 64px 64px;
+  image-rendering: pixelated;
+}
+.mcs img, .mcs canvas { image-rendering: pixelated; }
+.mcs-pixel { font-family: var(--mc-pixel); }
+.mcs-shadow { text-shadow: 2px 2px 0 #3f3f3f; }
+
+/* Encabezado de piedra con borde de césped */
+.mcs-header {
+  position: sticky; top: 0; z-index: 40; border-bottom: 2px solid #000;
+  background-image: linear-gradient(rgba(0, 0, 0, .35), rgba(0, 0, 0, .35)), url(/skins-assets/stone.png);
+  background-size: auto, 64px 64px;
+}
+.mcs-header::after {
+  content: ""; display: block; height: 8px; border-top: 2px solid #1d3e14;
+  background: url(/skins-assets/grass_top.png) 0 0 / 32px 32px;
+}
+.mcs-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Paneles oscuros como los menús del juego */
+.mcs-panel {
+  background: rgba(16, 16, 16, .8); border: 2px solid #000; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .1);
+}
+.mcs-title { font-family: var(--mc-pixel); text-shadow: 2px 2px 0 #3f3f3f; letter-spacing: .04em; }
+.mcs-label { font-family: var(--mc-pixel); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--mc-muted); }
+.mcs-yellow { color: var(--mc-yellow); text-shadow: 2px 2px 0 #3f3f15; }
+
+/* Botones con biselado de piedra */
+.mcs-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 6px 14px;
+  font-family: var(--mc-pixel); font-size: 13px; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; white-space: nowrap;
+  cursor: pointer; user-select: none; text-decoration: none;
+  background: var(--mc-stone); border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 var(--mc-stone-hi), inset -2px -3px 0 var(--mc-stone-lo);
+}
+.mcs-btn:hover { background: #8790c8; border-color: #fff; box-shadow: inset 2px 2px 0 #bac1eb, inset -2px -3px 0 #59609a; }
+.mcs-btn:active { box-shadow: inset 2px 2px 0 var(--mc-stone-lo), inset -2px -2px 0 var(--mc-stone-hi); }
+.mcs-btn:disabled { background: #2c2c2c; color: #7a7a7a; text-shadow: none; box-shadow: none; border-color: #000; cursor: not-allowed; }
+.mcs-btn.green, .mcs-btn[aria-current="page"], .mcs-btn[aria-pressed="true"] {
+  background: var(--mc-grass); border-color: #1d3e14;
+  box-shadow: inset 2px 2px 0 var(--mc-grass-hi), inset -2px -3px 0 var(--mc-grass-lo);
+}
+.mcs-btn.green:hover { background: #4c9a32; border-color: #fff; }
+.mcs-btn.red { background: #a33; border-color: #3d0d0d; box-shadow: inset 2px 2px 0 #d55, inset -2px -3px 0 #6d1d1d; }
+.mcs-btn.big { min-height: 56px; font-size: 20px; letter-spacing: .08em; }
+
+/* Campos como el cuadro de texto del juego */
+.mcs-input {
+  width: 100%; min-height: 42px; padding: 0 12px; background: #000; color: #fff; border: 2px solid #a0a0a0;
+  font-family: var(--mc-pixel); font-size: 13px; outline: none;
+}
+.mcs-input:focus { border-color: #fff; }
+.mcs-input:disabled { color: var(--mc-dim); border-color: #555; }
+.mcs-input::placeholder { color: #6f6f6f; }
+
+/* Casillas de la galería, como el inventario */
+.mcs-slot {
+  background: #8b8b8b; border: 2px solid; border-color: #373737 #fff #fff #373737; cursor: pointer;
+  display: grid; place-items: center; padding: 10px 6px 6px;
+}
+.mcs-slot:hover { background: #a5a5a5; }
+.mcs-slot span { font-family: var(--mc-pixel); font-size: 11px; color: #fff; text-shadow: 1px 1px 0 #000; }
+.mcs-tag { font-family: var(--mc-pixel); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 5px; border: 1px solid; }
+.mcs-tag.gold { color: #ffaa00; border-color: #ffaa00; }
+.mcs-tag.green { color: var(--mc-green); border-color: var(--mc-green); }
+
+.mcs-drop { border: 2px dashed #a0a0a0; background: rgba(0, 0, 0, .45); }
+.mcs-drop.over { border-color: var(--mc-green); background: rgba(85, 255, 85, .08); }
+.mcs-alert { border: 2px solid #000; padding: 10px 12px; font-weight: 700; text-shadow: 1px 1px 0 #000; }
+.mcs-alert.ok { background: rgba(20, 80, 20, .9); box-shadow: inset 0 0 0 2px var(--mc-green); }
+.mcs-alert.bad { background: rgba(120, 20, 20, .9); box-shadow: inset 0 0 0 2px var(--mc-red); }
+.mcs-viewer { background: radial-gradient(ellipse at center, rgba(85, 255, 85, .08), rgba(0, 0, 0, .5)); }

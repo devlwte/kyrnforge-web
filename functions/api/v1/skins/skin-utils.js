@@ -6,6 +6,8 @@ export { getKv };
 export const NAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 export const MAX_PNG_BYTES = 24 * 1024;
 export const RECENT_LIMIT = 120;
+export const MAX_SKINS_PER_USER = 10;
+export const UPLOADS_PER_MINUTE = 6;
 export const REPORTS_LIMIT = 500;
 
 export function json(data, status = 200, extra = {}) {
@@ -55,6 +57,18 @@ export const keys = {
 export async function readJson(kv, key, fallback = null) {
   const value = await kv.get(key, { type: "json" });
   return value ?? fallback;
+}
+
+/// Nombres (en minúsculas) de los aspectos de una cuenta. Antes se guardaba uno solo como texto.
+export async function userNames(kv, userId) {
+  const raw = await kv.get(keys.user(userId));
+  if (!raw) return [];
+  try {
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list : [String(list)];
+  } catch {
+    return [raw];
+  }
 }
 
 export function publicSkin(record, origin) {

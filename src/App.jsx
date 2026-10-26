@@ -29,7 +29,7 @@ import ModDashboard from './components/ModDashboard';
 import AppDetailView from './components/AppDetailView';
 import KyrnLinksView from './components/KyrnLinksView';
 
-const SkinsView = lazy(() => import('./components/SkinsView'));
+const SkinsApp = lazy(() => import('./components/skins/SkinsApp'));
 const SkinsModeration = lazy(() => import('./components/SkinsModeration'));
 const lazyFallback = <div className="min-h-screen bg-[#090d16]" />;
 import { initialAvailableApps } from './data/defaultApps';
@@ -251,8 +251,12 @@ export default function App() {
     return <Suspense fallback={lazyFallback}><SkinsModeration onNavigateHome={() => navigateTo('/mod')} /></Suspense>;
   }
 
-  if (currentPath === '/skins' || currentPath === '/skins/') {
-    return <Suspense fallback={lazyFallback}><SkinsView onNavigateHome={() => navigateTo('/')} /></Suspense>;
+  if (currentPath === '/skins' || currentPath.startsWith('/skins/')) {
+    return (
+      <Suspense fallback={lazyFallback}>
+        <SkinsApp path={currentPath} navigate={navigateTo} onNavigateHome={() => navigateTo('/')} />
+      </Suspense>
+    );
   }
 
   if (currentPath === '/mod' || currentPath === '/mod/') {

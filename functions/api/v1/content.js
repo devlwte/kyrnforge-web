@@ -1,3 +1,4 @@
+import { isAdmin } from "./auth/admin-utils.js";
 // Cloudflare Pages Function: /api/v1/content
 // Supports GET (retrieve full site data) and POST (save full site data or individual sections)
 
@@ -74,9 +75,7 @@ export async function onRequestPost(context) {
     const authHeader = request.headers.get("Authorization") || request.headers.get("x-admin-key") || "";
     const cleanAuth = authHeader.replace("Bearer ", "").trim();
 
-    const expectedKey = env?.ADMIN_KEY || env?.MOD_PASSWORD || env?.ADMIN_PASSWORD || "kyrnforge2026";
-
-    if (!cleanAuth || (cleanAuth !== expectedKey && cleanAuth !== "kyrnforge2026" && cleanAuth !== "kyrnforge_admin_secret_update")) {
+    if (!isAdmin(cleanAuth, env)) {
       return new Response(JSON.stringify({
         success: false,
         error: "No autorizado. Clave de administrador incorrecta."

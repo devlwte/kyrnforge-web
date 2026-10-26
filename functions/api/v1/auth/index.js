@@ -1,14 +1,13 @@
 // Cloudflare Pages Function: /api/v1/auth
 // Validates admin password against Cloudflare Environment Secrets (ADMIN_PASSWORD / ADMIN_KEY)
+import { isAdmin } from "./admin-utils.js";
 
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
     const body = await request.json().catch(() => ({}));
     const provided = (body.password || "").trim();
-    const expected = env?.ADMIN_KEY || env?.MOD_PASSWORD || env?.ADMIN_PASSWORD || "kyrnforge2026";
-
-    if (provided && provided === expected) {
+    if (isAdmin(provided, env)) {
       return new Response(JSON.stringify({ 
         success: true, 
         message: "Autenticado correctamente." 

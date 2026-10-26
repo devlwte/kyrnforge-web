@@ -45,7 +45,6 @@ const STORAGE_KEY_APPS = 'kyrnforge_available_apps';
 const STORAGE_KEY_PROJECTS = 'kyrnforge_projects';
 const STORAGE_KEY_SETTINGS = 'kyrnforge_site_settings';
 const AUTH_KEY = 'kyrnforge_mod_auth';
-const DEFAULT_PASS = 'kyrnforge2026';
 
 // Icon mapping helper for serializable feature tags
 const ICON_MAP = {
@@ -308,15 +307,16 @@ export default function ModDashboard({ onNavigateHome }) {
         headers: {}
       };
       if (apiIncludeAuth) {
-        options.headers['Authorization'] = `Bearer ${passwordInput || DEFAULT_PASS}`;
-        options.headers['x-admin-key'] = passwordInput || DEFAULT_PASS;
+        const adminKey = localStorage.getItem('kyrnforge_auth_token') || passwordInput;
+        options.headers['Authorization'] = `Bearer ${adminKey}`;
+        options.headers['x-admin-key'] = adminKey;
       }
 
       if (endpoint === 'auth') {
         options.method = 'POST';
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify({
-          apiKey: passwordInput || DEFAULT_PASS,
+          apiKey: passwordInput,
           clientApp: 'KyrnForgeModConsole',
           timestamp: new Date().toISOString()
         });
@@ -414,7 +414,7 @@ export default function ModDashboard({ onNavigateHome }) {
     }
 
     try {
-      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput;
       const res = await fetch('/api/v1/apps', {
         method: 'POST',
         headers: {
@@ -451,7 +451,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(newProjects, null, 2));
 
     try {
-      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput;
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -481,7 +481,7 @@ export default function ModDashboard({ onNavigateHome }) {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(newSettings, null, 2));
 
     try {
-      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput;
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -525,7 +525,7 @@ export default function ModDashboard({ onNavigateHome }) {
     }
 
     try {
-      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput || (localStorage.getItem(AUTH_KEY) === 'true' ? 'kyrnforge2026' : DEFAULT_PASS);
+      const auth = localStorage.getItem('kyrnforge_auth_token') || passwordInput;
       const res = await fetch('/api/v1/content', {
         method: 'POST',
         headers: {
@@ -580,15 +580,7 @@ export default function ModDashboard({ onNavigateHome }) {
         return;
       }
     } catch {
-      // Local fallback for offline/development
-      if (enteredPass === DEFAULT_PASS) {
-        setIsAuthenticated(true);
-        setAuthError(false);
-        localStorage.setItem(AUTH_KEY, 'true');
-        localStorage.setItem('kyrnforge_auth_token', enteredPass);
-        setIsLoggingIn(false);
-        return;
-      }
+      // Sin conexión con la API no se puede validar la clave.
     }
     setIsLoggingIn(false);
     setAuthError(true);
@@ -1231,7 +1223,6 @@ export default function ModDashboard({ onNavigateHome }) {
             <div className="space-y-1.5">
               <label className="text-xs font-mono text-zinc-300 flex items-center justify-between">
                 <span>Clave de Administrador</span>
-                <span className="text-[10px] text-zinc-500 font-normal">Por defecto: kyrnforge2026</span>
               </label>
               <div className="relative">
                 <input

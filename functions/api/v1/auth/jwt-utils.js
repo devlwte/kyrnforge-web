@@ -1,10 +1,12 @@
 // Cloudflare Pages Function: /api/v1/auth/jwt-utils.js
 // Utilidades criptográficas nativas usando Web Crypto API (sin dependencias npm)
 
-const DEFAULT_SECRET = "kyrncloud_jwt_secret_key_2026_devforge";
-
+// La clave de firma vive solo en el secreto JWT_SECRET de Cloudflare (o en .dev.vars en local).
 export async function getJwtSecretKey(env) {
-  const secretStr = env?.JWT_SECRET || env?.ADMIN_KEY || DEFAULT_SECRET;
+  const secretStr = env?.JWT_SECRET;
+  if (!secretStr || secretStr.length < 32) {
+    throw new Error("JWT_SECRET no está configurado");
+  }
   const encoder = new TextEncoder();
   return await crypto.subtle.importKey(
     "raw",

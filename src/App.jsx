@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { 
   Shield, 
   Terminal, 
@@ -28,6 +28,10 @@ import {
 import ModDashboard from './components/ModDashboard';
 import AppDetailView from './components/AppDetailView';
 import KyrnLinksView from './components/KyrnLinksView';
+
+const SkinsView = lazy(() => import('./components/SkinsView'));
+const SkinsModeration = lazy(() => import('./components/SkinsModeration'));
+const lazyFallback = <div className="min-h-screen bg-[#090d16]" />;
 import { initialAvailableApps } from './data/defaultApps';
 import { initialProjects, initialSiteSettings } from './data/defaultSiteData';
 
@@ -223,6 +227,7 @@ export default function App() {
     { id: 'proyectos', label: 'PROYECTOS', href: '#proyectos' },
     { id: 'descargas', label: 'DESCARGAS', href: '#descargas' },
     { id: 'links', label: 'ACORTADOR', href: '/links', isInternalRoute: true },
+    { id: 'skins', label: 'SKINS', href: '/skins', isInternalRoute: true },
     { id: 'github', label: 'GITHUB', href: 'https://github.com/devlwte', isExternal: true }
   ];
 
@@ -242,6 +247,14 @@ export default function App() {
   });
 
   // Render Moderator / Admin Dashboard when accessing /mod
+  if (currentPath === '/mod/skins') {
+    return <Suspense fallback={lazyFallback}><SkinsModeration onNavigateHome={() => navigateTo('/mod')} /></Suspense>;
+  }
+
+  if (currentPath === '/skins' || currentPath === '/skins/') {
+    return <Suspense fallback={lazyFallback}><SkinsView onNavigateHome={() => navigateTo('/')} /></Suspense>;
+  }
+
   if (currentPath === '/mod' || currentPath === '/mod/') {
     return <ModDashboard onNavigateHome={() => navigateTo('/')} />;
   }

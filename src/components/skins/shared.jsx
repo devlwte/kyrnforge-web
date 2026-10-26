@@ -80,6 +80,28 @@ export function imageSize(src) {
   });
 }
 
+/// Adivina el modelo: en uno de brazos finos la cuarta columna de la espalda del brazo
+/// (x 54-55, y 20-31) queda transparente. Los aspectos antiguos de 64x32 siempre son clásicos.
+export function detectSlim(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalHeight !== 64) return resolve(false);
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const { data } = ctx.getImageData(54, 20, 2, 12);
+      let transparent = true;
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) transparent = false;
+      resolve(transparent);
+    };
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
+}
+
 /// Visor 3D. `animation`: walk, run o idle.
 export function Skin3D({ src, slim, width = 300, height = 400, animation = 'walk', rotate = true }) {
   const canvasRef = useRef(null);

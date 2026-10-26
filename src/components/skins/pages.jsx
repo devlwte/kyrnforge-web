@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Edit3, Eye, Flag, Plus, Search, Trash2, Upload as UploadIcon } from 'lucide-react';
-import { Alert, NAME_RE, Panel, Skin3D, SkinFront, api, fileToDataUrl, imageSize, useSession } from './shared.jsx';
+import { Alert, NAME_RE, Panel, Skin3D, SkinFront, api, detectSlim, fileToDataUrl, imageSize, useSession } from './shared.jsx';
 
 // ---------- Galería ----------
 
@@ -154,6 +154,7 @@ export function Upload({ editName, navigate }) {
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
+  const [detectedSlim, setDetectedSlim] = useState(null);
 
   useEffect(() => {
     if (current) setSlim(current.model === 'slim');
@@ -182,7 +183,10 @@ export function Upload({ editName, navigate }) {
     if (width !== 64 || (height !== 64 && height !== 32)) {
       return setMessage({ kind: 'bad', text: `El aspecto debe medir 64x64; este mide ${width}x${height}.` });
     }
-    setMessage(null);
+    const detected = await detectSlim(dataUrl);
+    setSlim(detected);
+    setDetectedSlim(detected);
+    setMessage({ kind: 'ok', text: `Modelo detectado: ${detected ? 'brazos finos' : 'clásico'}.` });
     setPng(dataUrl);
   };
 
@@ -223,6 +227,11 @@ export function Upload({ editName, navigate }) {
             <button className="mcs-btn" aria-pressed={!slim} onClick={() => setSlim(false)}>Clásico</button>
             <button className="mcs-btn" aria-pressed={slim} onClick={() => setSlim(true)}>Brazos finos</button>
           </div>
+          {detectedSlim !== null && detectedSlim !== slim && (
+            <span className="text-xs text-[#ffff55]">
+              Este PNG está dibujado para {detectedSlim ? 'brazos finos' : 'el modelo clásico'}: con el otro modelo los brazos se verán con franjas negras.
+            </span>
+          )}
         </div>
         <label className={`mcs-drop ${over ? 'over' : ''} grid place-items-center gap-2 p-6 cursor-pointer text-center`}
           onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}

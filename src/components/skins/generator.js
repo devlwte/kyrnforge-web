@@ -99,6 +99,8 @@ export const PARTS = {
     normales: { label: 'Normales', paint: (p) => p.head('front', [...blank(3), '.hh..hh.', '.WI..IW.', '...ss...', '...mm...']) },
     anime: { label: 'Anime', paint: (p) => p.head('front', [...blank(4), '.EE..EE.', '.IW..WI.', '.P....P.', '....m...']) },
     serios: { label: 'Serios', paint: (p) => p.head('front', [...blank(3), 'hhh..hhh', '.EI..IE.', '...ss...', '..mmmm..']) },
+    lentes: { label: 'Con lentes', paint: (p) => p.head('front', [...blank(3), '.hh..hh.', 'KWIKKIWK', '...ss...', '...mm...']) },
+    sinrostro: { label: 'Sin rostro', paint: () => {} },
   },
   hair: {
     corto: { label: 'Corto', paint: (p) => shortHair(p) },
@@ -176,6 +178,45 @@ export const PARTS = {
         p.hat('back', ['AAAAAAAA', 'aAAAAAAa']);
       },
     },
+    sombrero: {
+      label: 'Sombrero de bruja',
+      paint: (p) => {
+        p.head('top', fill(8, 8, 'A'));
+        p.hat('top', ['AAAAAAAA', 'AaaaaaaA', 'AaAAAAaA', 'AaAaaAaA', 'AaAaaAaA', 'AaAAAAaA', 'AaaaaaaA', 'AAAAAAAA']);
+        p.hat('front', ['AAAAAAAA', 'aAAAAAAa', 'TTTTTTTT']);
+        p.hat('side', ['AAAAAAAA', 'aAAAAAAa', 'TTTTTTTT']);
+        p.hat('back', ['AAAAAAAA', 'aAAAAAAa', 'TTTttTTT']);
+      },
+    },
+    capucha: {
+      label: 'Capucha',
+      paint: (p) => {
+        p.hat('top', ['AAAAAAAA', 'AAaAAAAA', 'AAAAAaAA', 'AAAAAAAA', 'AaAAAAAA', 'AAAAAAaA', 'AAAaAAAA', 'AAAAAAAA']);
+        p.hat('front', ['AAAAAAAA', 'AaAAAAaA', 'Aa....aA', 'A......A', 'A......A', 'A......A', 'a......a']);
+        p.hat('side', ['AAAAAAAA', 'AAAAAAAA', 'AAAAAAaA', 'AAaAAAAA', 'AAAAAAAA', 'AAAAaAAA', 'AAAAAAAA', 'aAAAAAAa']);
+        p.hat('back', ['AAAAAAAA', 'AAAaaAAA', 'AAAaaAAA', 'AAAAAAAA', 'AAAaaAAA', 'AAAAAAAA', 'AAAaaAAA', 'aAAAAAAa']);
+      },
+    },
+    policia: {
+      label: 'Gorra de policía',
+      paint: (p) => {
+        p.head('top', fill(8, 8, 'A'));
+        p.hat('top', fill(8, 8, 'A'));
+        p.hat('front', ['AAAtTAAA', 'AAATTAAA', 'KKKKKKKK']);
+        p.hat('side', ['AAAAAAAA', 'aAAAAAAA', '....KKKK']);
+        p.hat('back', ['AAAAAAAA', 'aAAAAAAa']);
+      },
+    },
+    obra: {
+      label: 'Casco de obra',
+      paint: (p) => {
+        p.head('top', fill(8, 8, 'T'));
+        p.hat('top', ['tTTTTTTt', ...Array(6).fill('TTTttTTT'), 'tTTTTTTt']);
+        p.hat('front', ['TTTTTTTT', 'TTTuuTTT', 'uuuuuuuu']);
+        p.hat('side', ['TTTTTTTT', 'TTTTTTTT', 'uuuuuuuu']);
+        p.hat('back', ['TTTTTTTT', 'TTTTTTTT', 'uuuuuuuu']);
+      },
+    },
     casco: {
       label: 'Casco espacial',
       helmet: true,
@@ -244,6 +285,69 @@ export const PARTS = {
         p.legs('top', fill(4, 4, 'A'));
       },
     },
+    tunica: {
+      label: 'Túnica',
+      paint: (p) => {
+        p.body('front', ['CCCSSCCC', 'CCCAACCC', 'CCCAACCC', 'CkCAACkC', 'CCCAACCC', 'CCCAACCC', 'CCCAACCC', 'TTTTTTTT',
+          'CCCAACCC', 'CCCAACCC', 'CcCAACcC', 'cCCAACCc']);
+        p.body('back', ['CCCCCCCC', 'CCCCCCCC', 'CkCCCCkC', 'CCCCCCCC', 'CCCCCCCC', 'CCcCCcCC', 'CCCCCCCC', 'TTTTTTTT',
+          'CCCCCCCC', 'CCCCCCCC', 'CcCCCCcC', 'cCCCCCCc']);
+        p.body('side', [...fill(4, 7, 'C'), 'TTTT', 'CCCC', 'CCCC', 'CcCC', 'cCCc']);
+        p.body('top', fill(8, 4, 'C'));
+        p.body('bottom', fill(8, 4, 'C'));
+        p.arms('all', ['CCCC', 'CCCC', 'CkCC', 'CCCC', 'CCCC', 'CCCc', 'CCCC', 'CCCC', 'cCCc', 'AAAA', 'SSSS', 'sSSs']);
+        p.arms('top', fill(4, 4, 'C'));
+        p.legs('all', ['CCCC', 'CCCC', 'CcCC', 'CCCC', 'CCCC', 'CCcC', 'CCCC', 'CCCC', 'cCCc', 'AAAA']);
+        p.legs('top', fill(4, 4, 'C'));
+      },
+    },
+    policia: {
+      label: 'Uniforme de policía',
+      paint: (p) => {
+        p.body('front', ['CccKKccC', 'CCcKKcCC', 'CTCKKCcC', 'CcCKKCCC', 'CCCKKCCC', 'CCCKKCCC', 'CCCCCCCC', 'KKKMMKKK']);
+        p.body('back', ['CccccccC', 'CCCCCCCC', 'CCCCCCCC', 'CcCCCCcC', 'CCCCCCCC', 'CCCCCCCC', 'CCCCCCCC', 'KKKKKKKK']);
+        p.body('side', ['CccC', 'CCCC', 'CCCC', 'CCCC', 'CCCC', 'CCCC', 'CCCC', 'KMMK']);
+        p.body('top', ['CccccccC', 'CTCCCCTC', 'CCCCCCCC', 'CCCCCCCC']);
+        p.arms('all', ['CCCC', 'CTCC', 'CCCC', 'CcCC', 'CCCC', 'CCCC', 'CCcC', 'CCCC', 'cccc', 'SSSS', 'SSSS', 'sSSs']);
+        p.arms('top', fill(4, 4, 'C'));
+      },
+    },
+    traje: {
+      label: 'Traje',
+      paint: (p) => {
+        p.body('front', ['CcWTTWcC', 'CcWTTWcC', 'CCcTTcCC', 'CCcTTcCC', 'CCCTTCCC', 'CCCTTCCC', 'CCCKCCCC', 'CCCCCCCC']);
+        p.body('back', ['CCCCCCCC', 'CCCCCCCC', 'CkCCCCkC', 'CCCCCCCC', 'CCCCCCCC', 'CCCccCCC', 'CCCccCCC', 'CCCccCCC']);
+        p.body('side', [...fill(4, 7, 'C'), 'cCCc']);
+        p.body('top', ['CcWWWWcC', 'CCCCCCCC', 'CCCCCCCC', 'CCCCCCCC']);
+        p.arms('all', ['CCCC', 'CCCC', 'CkCC', 'CCCC', 'CCCC', 'CCCc', 'CCCC', 'CCCC', 'WWWW', 'SSSS', 'SSSS', 'sSSs']);
+        p.arms('top', fill(4, 4, 'C'));
+      },
+    },
+    chaleco: {
+      label: 'Chaleco de obra',
+      paint: (p) => {
+        p.body('front', ['ATTSSTTA', 'ATTAATTA', 'ATTAATTA', 'WWWAAWWW', 'ATTAATTA', 'ATTAATTA', 'WWWAAWWW', 'KKKMMKKK']);
+        p.body('back', ['ATTTTTTA', 'ATTTTTTA', 'ATTTTTTA', 'WWWWWWWW', 'ATTTTTTA', 'ATTTTTTA', 'WWWWWWWW', 'KKKKKKKK']);
+        p.body('side', ['ATTA', 'TTTT', 'TTTT', 'WWWW', 'TTTT', 'TTTT', 'WWWW', 'KKKK']);
+        p.body('top', fill(8, 4, 'T'));
+        p.arms('all', ['AAAA', 'AAAA', 'AaAA', 'aAAa', 'SSSS', 'SSSS', 'SsSS', 'SSSS', 'SSSS', 'SSSS', 'SSSS', 'sSSs']);
+        p.arms('top', fill(4, 4, 'A'));
+      },
+    },
+    bata: {
+      label: 'Bata médica',
+      paint: (p) => {
+        p.body('front', ['CMASSAMC', 'CMAAAAMC', 'CCMAAMCC', 'CCCnMCTC', 'CCCAACcC', 'CCCAACCC', 'CcCAACcC', 'CCCAACCC',
+          'CCCAACCC', 'CCCAACCC', 'CcCAACcC', 'cCCAACCc']);
+        p.body('back', ['CCCCCCCC', 'CCCCCCCC', 'CkCCCCkC', 'CCCCCCCC', 'CCCCCCCC', 'CCCCCCCC', 'CCCccCCC', 'CCCccCCC',
+          'CCCccCCC', 'CCCccCCC', 'CcCccCcC', 'cCCccCCc']);
+        p.body('side', [...fill(4, 11, 'C'), 'cCCc']);
+        p.body('top', fill(8, 4, 'C'));
+        p.arms('all', ['CCCC', 'CCCC', 'CkCC', 'CCCC', 'CCCC', 'CCCc', 'CCCC', 'CCCC', 'cCCc', 'SSSS', 'SSSS', 'sSSs']);
+        p.arms('top', fill(4, 4, 'C'));
+        p.legs('all', ['CCCC', 'CCCC', 'CCCC', 'cCCc']);
+      },
+    },
     sudadera: {
       label: 'Sudadera',
       paint: (p) => {
@@ -277,6 +381,7 @@ export const PARTS = {
   shoes: {
     botas: { label: 'Botas', paint: (p) => { p.legs('all', [...blank(9, 4), 'FFFF', 'FFFF', 'ffff']); p.legs('bottom', fill(4, 4, 'f')); } },
     zapatillas: { label: 'Zapatillas', paint: (p) => { p.legs('all', [...blank(9, 4), 'FFFF', 'FTTF', 'WWWW']); p.legs('bottom', fill(4, 4, 'W')); } },
+    zapatos: { label: 'Zapatos', paint: (p) => { p.legs('all', [...blank(10, 4), 'FFFF', 'ffff']); p.legs('bottom', fill(4, 4, 'f')); } },
     descalzo: { label: 'Descalzo', paint: (p) => p.legs('bottom', fill(4, 4, 's')) },
   },
 };
@@ -317,6 +422,36 @@ export const PRESETS = {
     label: 'Estudiante anime', slim: true, gloves: false,
     parts: { hair: 'puntas', eyes: 'anime', facial: 'ninguno', accessory: 'ninguno', top: 'uniforme', pants: 'pantalon', shoes: 'zapatillas' },
     colors: { skin: '#f2c9a8', hair: '#3b6fd8', eyes: '#4aa3ff', main: '#22305a', second: '#e8c25a', detail: '#d33a3a', pants: '#3a3d4a', shoes: '#2b1e1e' },
+  },
+  bruja: {
+    label: 'Bruja', slim: true, gloves: false,
+    parts: { hair: 'largo', eyes: 'normales', facial: 'ninguno', accessory: 'sombrero', top: 'tunica', pants: 'pantalon', shoes: 'botas' },
+    colors: { skin: '#d9b48f', hair: '#2b1b2e', eyes: '#7a3fb0', main: '#3b2a5a', second: '#1e1626', detail: '#8fe36a', pants: '#2b1b2e', shoes: '#1a1418' },
+  },
+  brujo: {
+    label: 'Brujo', slim: false, gloves: false,
+    parts: { hair: 'corto', eyes: 'serios', facial: 'barba', accessory: 'capucha', top: 'tunica', pants: 'pantalon', shoes: 'botas' },
+    colors: { skin: '#c98b63', hair: '#d8d8d8', eyes: '#4aa3ff', main: '#1f3b5a', second: '#172a40', detail: '#e8c25a', pants: '#172a40', shoes: '#2b1b10' },
+  },
+  policia: {
+    label: 'Policía', slim: false, gloves: false,
+    parts: { hair: 'corto', eyes: 'serios', facial: 'ninguno', accessory: 'policia', top: 'policia', pants: 'pantalon', shoes: 'zapatos' },
+    colors: { skin: '#a86f4c', hair: '#1e1b18', eyes: '#3a2a1a', main: '#1f2f5a', second: '#16213f', detail: '#e8c25a', pants: '#16213f', shoes: '#151515' },
+  },
+  traje: {
+    label: 'Hombre de traje', slim: false, gloves: false,
+    parts: { hair: 'calvo', eyes: 'sinrostro', facial: 'ninguno', accessory: 'ninguno', top: 'traje', pants: 'pantalon', shoes: 'zapatos' },
+    colors: { skin: '#ececec', hair: '#ececec', eyes: '#2b2b2b', main: '#141418', second: '#141418', detail: '#7a1010', pants: '#141418', shoes: '#0d0d0f' },
+  },
+  obrero: {
+    label: 'Obrero', slim: false, gloves: true,
+    parts: { hair: 'corto', eyes: 'normales', facial: 'bigote', accessory: 'obra', top: 'chaleco', pants: 'pantalon', shoes: 'botas' },
+    colors: { skin: '#c98b63', hair: '#3a2a1a', eyes: '#6b4226', main: '#3a5f8a', second: '#3a5f8a', detail: '#f2c12e', pants: '#2f4f7a', shoes: '#4a3020' },
+  },
+  doctora: {
+    label: 'Doctora', slim: true, gloves: false,
+    parts: { hair: 'largo', eyes: 'lentes', facial: 'ninguno', accessory: 'ninguno', top: 'bata', pants: 'pantalon', shoes: 'zapatillas' },
+    colors: { skin: '#f2c9a8', hair: '#5b3a1e', eyes: '#3e8e41', main: '#ececec', second: '#3a8fb0', detail: '#d33a3a', pants: '#3a8fb0', shoes: '#e8e8e8' },
   },
 };
 

@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Edit3, Eye, Flag, Plus, Search, Trash2, Upload as UploadIcon } from 'lucide-react';
 import { Alert, NAME_RE, Panel, Skin3D, SkinFront, api, detectSlim, fileToDataUrl, imageSize, useSession } from './shared.jsx';
+import { DRAFT_KEY } from './creator.jsx';
+
+/// Aspecto que dejó el generador para publicarlo (se lee una sola vez).
+function takeDraft() {
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null');
+    sessionStorage.removeItem(DRAFT_KEY);
+    return draft?.png ? draft : null;
+  } catch {
+    return null;
+  }
+}
 
 // ---------- Galería ----------
 
@@ -27,7 +39,8 @@ export function Gallery({ navigate }) {
           premium. Los nombres premium muestran su aspecto de Mojang y no se pueden reclamar.
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
-          <button className="mcs-btn green" onClick={() => navigate('/skins/subir')}><UploadIcon size={16} /> Subir aspecto</button>
+          <button className="mcs-btn green" onClick={() => navigate('/skins/crear')}>Crear aspecto</button>
+          <button className="mcs-btn" onClick={() => navigate('/skins/subir')}><UploadIcon size={16} /> Subir PNG</button>
           <form onSubmit={search} className="flex gap-2 flex-1 min-w-[220px] max-w-md">
             <input className="mcs-input" placeholder="Buscar un jugador" value={query} maxLength={16}
               onChange={(e) => setQuery(e.target.value.trim())} />
@@ -148,13 +161,14 @@ export function Upload({ editName, navigate }) {
   const { token, me, loading, refresh } = useSession();
   const editing = Boolean(editName);
   const current = editing ? me?.skins?.find((s) => s.name.toLowerCase() === editName.toLowerCase()) : null;
+  const [draft] = useState(() => (editName ? null : takeDraft()));
   const [name, setName] = useState(editName || '');
-  const [slim, setSlim] = useState(false);
-  const [png, setPng] = useState('');
+  const [slim, setSlim] = useState(draft?.slim ?? false);
+  const [png, setPng] = useState(draft?.png || '');
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [detectedSlim, setDetectedSlim] = useState(null);
+  const [message, setMessage] = useState(draft ? { kind: 'ok', text: 'Aspecto del generador listo: ponle un nombre y publícalo.' } : null);
+  const [detectedSlim, setDetectedSlim] = useState(draft ? draft.slim : null);
 
   useEffect(() => {
     if (current) setSlim(current.model === 'slim');

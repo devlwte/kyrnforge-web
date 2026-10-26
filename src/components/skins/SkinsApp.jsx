@@ -3,8 +3,9 @@ import { ArrowLeft, User } from 'lucide-react';
 import './skins.css';
 import { SessionProvider, useSession } from './shared.jsx';
 import { Account, Gallery, MySkins, Upload, Viewer } from './pages.jsx';
+import { Creator } from './creator.jsx';
 
-/// Rutas: /skins, /skins/subir, /skins/editar/:nombre, /skins/ver/:nombre, /skins/mis-skins, /skins/cuenta
+/// Rutas: /skins, /skins/crear, /skins/subir, /skins/editar/:nombre, /skins/ver/:nombre, /skins/mis-skins, /skins/cuenta
 function route(path) {
   const parts = path.split('?')[0].replace(/^\/skins\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   return { section: parts[0] || 'galeria', arg: parts[1] || '' };
@@ -12,7 +13,7 @@ function route(path) {
 
 function Header({ section, navigate, onNavigateHome }) {
   const { me } = useSession();
-  const tabs = [['galeria', 'Galería', '/skins'], ['subir', 'Subir', '/skins/subir'], ['mis-skins', 'Mis aspectos', '/skins/mis-skins']];
+  const tabs = [['galeria', 'Galería', '/skins'], ['crear', 'Crear', '/skins/crear'], ['subir', 'Subir', '/skins/subir'], ['mis-skins', 'Mis aspectos', '/skins/mis-skins']];
   return (
     <header className="mcs-header">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-3">
@@ -41,6 +42,7 @@ export default function SkinsApp({ path, navigate, onNavigateHome }) {
   const { section, arg } = route(path);
   let page;
   if (section === 'ver' && arg) page = <Viewer name={arg} navigate={navigate} />;
+  else if (section === 'crear') page = <Creator navigate={navigate} />;
   else if (section === 'subir') page = <Upload key="new" navigate={navigate} />;
   else if (section === 'editar' && arg) page = <Upload key={`edit-${arg}`} editName={arg} navigate={navigate} />;
   else if (section === 'mis-skins') page = <MySkins navigate={navigate} />;
@@ -53,7 +55,7 @@ export default function SkinsApp({ path, navigate, onNavigateHome }) {
         <Header section={section === 'editar' ? 'subir' : section} navigate={navigate} onNavigateHome={onNavigateHome} />
         <main className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1">{page}</main>
         <footer className="text-center text-[11px] text-[#8a8a8a] py-4">
-          Texturas de la interfaz: Kenney (CC0) · Fuente: Monocraft (OFL) · No afiliado a Mojang ni Microsoft
+          Texturas originales de KyrnForge · Fuente: Monocraft (OFL) · No afiliado a Mojang ni Microsoft
         </footer>
       </div>
     </SessionProvider>

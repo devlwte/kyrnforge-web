@@ -1,4 +1,4 @@
-/* KyrnForge Skins: temática de bloques (texturas CC0 de Kenney y fuente Monocraft, OFL). */
+/* KyrnForge Skins: tema de forja con texturas originales (scripts/generar-texturas.py) y fuente Monocraft (OFL). */
 @font-face { font-family: "Monocraft"; src: url(/skins-assets/monocraft.woff2) format("woff2"); font-display: swap; }
 
 .mcs {
@@ -7,9 +7,9 @@
   --mc-grass: #3c8527; --mc-grass-hi: #5db33f; --mc-grass-lo: #24561a;
   --mc-pixel: "Monocraft", "Courier New", monospace;
   min-height: 100vh; color: #fff; display: flex; flex-direction: column;
-  background-color: #3b2a1e;
-  background-image: linear-gradient(rgba(0, 0, 0, .62), rgba(0, 0, 0, .62)), url(/skins-assets/dirt.png);
-  background-size: auto, 64px 64px;
+  background-color: #2b2724;
+  background-image: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), url(/skins-assets/piedra-forja.png);
+  background-size: auto, 128px 128px;
   image-rendering: pixelated;
 }
 .mcs img, .mcs canvas { image-rendering: pixelated; }
@@ -19,12 +19,13 @@
 /* Encabezado de piedra con borde de césped */
 .mcs-header {
   position: sticky; top: 0; z-index: 40; border-bottom: 2px solid #000;
-  background-image: linear-gradient(rgba(0, 0, 0, .35), rgba(0, 0, 0, .35)), url(/skins-assets/stone.png);
-  background-size: auto, 64px 64px;
+  background-image: url(/skins-assets/placas-hierro.png);
+  background-size: 64px 64px;
 }
 .mcs-header::after {
-  content: ""; display: block; height: 8px; border-top: 2px solid #1d3e14;
-  background: url(/skins-assets/grass_top.png) 0 0 / 32px 32px;
+  content: ""; display: block; height: 8px; border-top: 2px solid #2a0f06;
+  background: url(/skins-assets/franja-brasa.png) 0 0 / 96px 8px;
+  box-shadow: 0 2px 10px rgba(240, 140, 45, .35);
 }
 .mcs-nav { display: flex; gap: 6px; flex-wrap: wrap; }
 

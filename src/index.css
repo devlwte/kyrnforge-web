@@ -4,32 +4,40 @@
 
 @layer base {
   :root {
-    --bg: 246 243 238;
-    --surface: 255 253 249;
-    --raised: 238 233 225;
-    --line: 223 216 205;
-    --fg: 29 27 24;
-    --muted: 92 87 79;
-    --dim: 140 134 124;
-    --accent: 178 82 31;
-    --accent-fg: 255 250 245;
-    --ok: 62 122 58;
+    --bg: 243 244 242;
+    --surface: 255 255 255;
+    --raised: 233 235 232;
+    --line: 220 223 219;
+    --fg: 24 26 25;
+    --muted: 86 91 88;
+    --dim: 138 143 139;
+    --accent: 54 80 110;
+    --accent-fg: 241 244 248;
+    --ok: 63 122 58;
     color-scheme: light;
   }
 
   :root[data-theme="dark"] {
-    --bg: 19 18 17;
-    --surface: 27 26 24;
-    --raised: 37 35 32;
-    --line: 48 45 41;
-    --fg: 236 232 225;
-    --muted: 166 160 150;
-    --dim: 112 107 99;
-    --accent: 222 128 72;
-    --accent-fg: 28 17 9;
+    --bg: 17 19 18;
+    --surface: 25 28 27;
+    --raised: 34 38 36;
+    --line: 42 46 44;
+    --fg: 230 233 231;
+    --muted: 162 168 164;
+    --dim: 109 115 111;
+    --accent: 147 171 201;
+    --accent-fg: 16 23 34;
     --ok: 134 180 126;
     color-scheme: dark;
   }
+
+  /* Colores de acento elegibles desde /mod (Acero es el de por defecto) */
+  :root[data-accent="patina"] { --accent: 47 107 94; --accent-fg: 242 247 245; }
+  :root[data-accent="patina"][data-theme="dark"] { --accent: 124 191 174; --accent-fg: 14 26 23; }
+  :root[data-accent="hierro"] { --accent: 163 50 43; --accent-fg: 251 241 240; }
+  :root[data-accent="hierro"][data-theme="dark"] { --accent: 227 133 124; --accent-fg: 33 13 11; }
+  :root[data-accent="grafito"] { --accent: 42 45 44; --accent-fg: 243 244 242; }
+  :root[data-accent="grafito"][data-theme="dark"] { --accent: 223 226 224; --accent-fg: 17 19 18; }
 
   html, body {
     overflow-x: hidden;
@@ -61,6 +69,10 @@
   }
   .btn-ghost {
     @apply btn border border-line bg-surface text-fg hover:border-dim;
+  }
+  .display {
+    @apply font-semibold tracking-[-0.03em];
+    text-wrap: balance;
   }
   .eyebrow {
     @apply font-mono text-[11px] uppercase tracking-[0.14em] text-dim;

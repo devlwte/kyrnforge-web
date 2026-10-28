@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeAppearance, tileSvg } from './src/brand.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,15 @@ function kyrnforgeApiPlugin() {
           res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-key');
           res.statusCode = 204;
           return res.end();
+        }
+
+        if (url.startsWith('/icon.svg')) {
+          const params = new URL(url, 'http://localhost').searchParams;
+          const settingsFile = path.resolve(__dirname, 'public/data/settings.json');
+          const settings = fs.existsSync(settingsFile) ? JSON.parse(fs.readFileSync(settingsFile, 'utf8')) : {};
+          const appearance = normalizeAppearance({ ...settings.appearance, ...(params.get('i') && { icon: params.get('i') }), ...(params.get('a') && { accent: params.get('a') }) });
+          res.setHeader('Content-Type', 'image/svg+xml');
+          return res.end(tileSvg(appearance.icon, appearance.accent));
         }
 
         // Only intercept /api/v1 requests

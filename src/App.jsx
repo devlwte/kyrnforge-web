@@ -7,6 +7,7 @@ import PrivacyView from './components/site/PrivacyView';
 import { initialAvailableApps } from './data/defaultApps';
 import { initialProjects } from './data/defaultSiteData';
 import { buildCatalog } from './data/catalog';
+import { AppearanceContext, applyAppearance, cachedAppearance } from './appearance';
 
 const SkinsApp = lazy(() => import('./components/skins/SkinsApp'));
 const SkinsModeration = lazy(() => import('./components/SkinsModeration'));
@@ -50,6 +51,7 @@ export default function App() {
     return initialProjects || [];
   });
 
+  const [appearance, setAppearance] = useState(cachedAppearance);
   const catalog = useMemo(() => buildCatalog(availableApps, projects), [availableApps, projects]);
 
   const scrollToHash = useCallback(() => {
@@ -88,6 +90,9 @@ export default function App() {
       const content = await fetchJson(`/api/v1/content?t=${t}`);
       let apps = content?.availableApps;
       let list = content?.projects;
+      if (content?.siteSettings?.appearance) {
+        setAppearance(applyAppearance(content.siteSettings.appearance));
+      }
       if (!Array.isArray(apps) || apps.length === 0) {
         [apps, list] = await Promise.all([fetchJson(`/data/apps.json?t=${t}`), fetchJson(`/data/projects.json?t=${t}`)]);
       }
@@ -102,39 +107,47 @@ export default function App() {
   }, []);
 
   const goHome = () => navigateTo('/');
+  const brand = useMemo(
+    () => ({ ...appearance, update: (value) => setAppearance(applyAppearance(value)) }),
+    [appearance],
+  );
 
-  if (currentPath === '/mod/skins') {
-    return <Suspense fallback={lazyFallback}><SkinsModeration onNavigateHome={() => navigateTo('/mod')} /></Suspense>;
-  }
+  const route = () => {
+    if (currentPath === '/mod/skins') {
+      return <Suspense fallback={lazyFallback}><SkinsModeration onNavigateHome={() => navigateTo('/mod')} /></Suspense>;
+    }
 
-  if (currentPath === '/skins' || currentPath.startsWith('/skins/')) {
-    return (
-      <Suspense fallback={lazyFallback}>
-        <SkinsApp path={currentPath} navigate={navigateTo} onNavigateHome={goHome} />
-      </Suspense>
-    );
-  }
+    if (currentPath === '/skins' || currentPath.startsWith('/skins/')) {
+      return (
+        <Suspense fallback={lazyFallback}>
+          <SkinsApp path={currentPath} navigate={navigateTo} onNavigateHome={goHome} />
+        </Suspense>
+      );
+    }
 
-  if (currentPath === '/mod' || currentPath === '/mod/') {
-    return <Suspense fallback={lazyFallback}><ModDashboard navigate={navigateTo} /></Suspense>;
-  }
+    if (currentPath === '/mod' || currentPath === '/mod/') {
+      return <Suspense fallback={lazyFallback}><ModDashboard navigate={navigateTo} /></Suspense>;
+    }
 
-  if (currentPath === '/links' || currentPath.startsWith('/links/') || currentPath === '/sh' || currentPath.startsWith('/sh/')) {
-    return <KyrnLinksView navigate={navigateTo} current="/links" />;
-  }
+    if (currentPath === '/links' || currentPath.startsWith('/links/') || currentPath === '/sh' || currentPath.startsWith('/sh/')) {
+      return <KyrnLinksView navigate={navigateTo} current="/links" />;
+    }
 
-  if (currentPath.startsWith('/app/') || currentPath === '/app') {
-    const appId = currentPath.replace(/^\/app\/?/, '').split('/')[0];
-    return <AppDetailView appId={appId} catalog={catalog} navigate={navigateTo} />;
-  }
+    if (currentPath.startsWith('/app/') || currentPath === '/app') {
+      const appId = currentPath.replace(/^\/app\/?/, '').split('/')[0];
+      return <AppDetailView appId={appId} catalog={catalog} navigate={navigateTo} />;
+    }
 
-  if (currentPath === '/acerca' || currentPath === '/acerca/') {
-    return <AboutView navigate={navigateTo} />;
-  }
+    if (currentPath === '/acerca' || currentPath === '/acerca/') {
+      return <AboutView navigate={navigateTo} />;
+    }
 
-  if (currentPath === '/privacidad' || currentPath === '/privacidad/') {
-    return <PrivacyView navigate={navigateTo} />;
-  }
+    if (currentPath === '/privacidad' || currentPath === '/privacidad/') {
+      return <PrivacyView navigate={navigateTo} />;
+    }
 
-  return <HomeView catalog={catalog} navigate={navigateTo} />;
+    return <HomeView catalog={catalog} navigate={navigateTo} />;
+  };
+
+  return <AppearanceContext.Provider value={brand}>{route()}</AppearanceContext.Provider>;
 }

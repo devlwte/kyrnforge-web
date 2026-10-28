@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/assets/*",
+    "/projects/*",
+    "/skins-assets/*",
+    "/brand/*",
+    "/data/*",
+    "/logo.svg",
+    "/favicon.svg",
+    "/icons.svg",
+    "/skins-icon.png",
+    "/ads.txt",
+    "/robots.txt"
+  ]
+}

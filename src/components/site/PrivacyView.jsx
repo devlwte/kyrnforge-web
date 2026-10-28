@@ -23,7 +23,7 @@ export default function PrivacyView({ navigate }) {
     <Layout navigate={navigate} current="/privacidad">
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
         <p className="eyebrow">Última actualización: {UPDATED}</p>
-        <h1 className="font-serif text-5xl leading-tight mt-4">Política de privacidad</h1>
+        <h1 className="display text-4xl sm:text-5xl leading-tight mt-4">Política de privacidad</h1>
         <p className="mt-6 text-lg text-muted leading-relaxed">
           Esta página explica qué datos se usan en kyrnforge.dev y para qué. Las aplicaciones que se descargan
           desde aquí tienen sus propias políticas en{' '}

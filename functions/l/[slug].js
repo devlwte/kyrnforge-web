@@ -1,4 +1,6 @@
 // Página intermedia de los enlaces cortos: muestra el destino y continúa sola tras unos segundos.
+import { PALETTES, iconHref } from '../../src/brand.js';
+import { readAppearance } from '../appearance-utils.js';
 
 const WAIT_SECONDS = 5;
 
@@ -16,15 +18,15 @@ function scriptJson(value) {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
-const STYLE = `
+const style = ({ light, dark }) => `
   :root {
-    --bg: #f6f3ee; --surface: #fffdf9; --line: #dfd8cd; --fg: #1d1b18;
-    --muted: #5c574f; --dim: #8c867c; --accent: #b2521f; --accent-fg: #fffaf5;
+    --bg: #f3f4f2; --surface: #ffffff; --line: #dcdfdb; --fg: #181a19;
+    --muted: #565b58; --dim: #8a8f8b; --accent: ${light.accent}; --accent-fg: ${light.on};
     color-scheme: light;
   }
   :root[data-theme="dark"] {
-    --bg: #131211; --surface: #1b1a18; --line: #302d29; --fg: #ece8e1;
-    --muted: #a6a096; --dim: #706b63; --accent: #de8048; --accent-fg: #1c1109;
+    --bg: #111312; --surface: #191c1b; --line: #2a2e2c; --fg: #e6e9e7;
+    --muted: #a2a8a4; --dim: #6d736f; --accent: ${dark.accent}; --accent-fg: ${dark.on};
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -40,7 +42,7 @@ const STYLE = `
   .brand img { width: 22px; height: 22px; }
   .card { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px 24px; }
   .eyebrow { font: 500 11px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0; }
-  h1 { font: 400 clamp(1.9rem, 7vw, 2.4rem)/1.1 "Instrument Serif", Georgia, serif; margin: 12px 0 0; overflow-wrap: anywhere; }
+  h1 { font-size: clamp(1.7rem, 6vw, 2.1rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.03em; margin: 12px 0 0; overflow-wrap: anywhere; }
   .target { margin: 14px 0 0; font: 13px/1.5 "JetBrains Mono", ui-monospace, monospace; color: var(--muted); overflow-wrap: anywhere; max-height: 4.5em; overflow: hidden; }
   .bar { margin-top: 24px; height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
   .bar span { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; animation: drain ${WAIT_SECONDS}s linear forwards; }
@@ -55,44 +57,47 @@ const STYLE = `
   @media (prefers-reduced-motion: reduce) { .bar span { animation: none; } }
 `;
 
-function head(title) {
+function head(title, appearance) {
   return `<meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>${title}</title>
-  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="icon" type="image/svg+xml" href="${iconHref(appearance)}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script>
     (function () {
-      var t;
+      var t, d = '${appearance.theme}';
       try { t = localStorage.getItem('kyrnforge_theme'); } catch (e) {}
-      if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      if (t !== 'light' && t !== 'dark') t = d === 'light' || d === 'dark' ? d : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.dataset.theme = t;
     })();
   </script>
-  <style>${STYLE}</style>`;
+  <style>${style(PALETTES[appearance.accent])}</style>`;
 }
 
-const BRAND = `<a href="/" class="brand"><img src="/logo.svg" alt=""><span>KyrnForge</span></a>`;
+const brand = (appearance) => `<a href="/" class="brand"><img src="${iconHref(appearance)}" alt=""><span>KyrnForge</span></a>`;
 
 export async function onRequest(context) {
   const { env, params } = context;
   const slug = (params.slug || '').toLowerCase();
   const kv = env?.KYRNFORGE_KV || env?.KV || env?.DB || env?.kyrnforge_kv;
 
-  const link = kv ? await kv.get(`link_${slug}`, { type: 'json' }) : null;
+  const [link, appearance] = await Promise.all([
+    kv ? kv.get(`link_${slug}`, { type: 'json' }) : null,
+    readAppearance(env),
+  ]);
 
   if (!link || !link.targetUrl) {
     const html = `<!doctype html>
 <html lang="es">
 <head>
-  ${head('Enlace no disponible · KyrnForge')}
+  ${head('Enlace no disponible · KyrnForge', appearance)}
 </head>
 <body>
   <main>
-    ${BRAND}
+    ${brand(appearance)}
     <div class="card">
       <p class="eyebrow">Enlace corto</p>
       <h1>Este enlace ya no existe.</h1>
@@ -111,11 +116,11 @@ export async function onRequest(context) {
   const html = `<!doctype html>
 <html lang="es">
 <head>
-  ${head(`Ir a ${host} · KyrnForge`)}
+  ${head(`Ir a ${host} · KyrnForge`, appearance)}
 </head>
 <body>
   <main>
-    ${BRAND}
+    ${brand(appearance)}
     <div class="card">
       <p class="eyebrow">Vas a salir de KyrnForge</p>
       <h1>${host}</h1>

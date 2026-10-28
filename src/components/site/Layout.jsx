@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useTheme } from '../../theme';
+import { useAppearance } from '../../appearance';
+import { Tile } from './Brand';
 
 const YEAR = new Date().getFullYear();
 
@@ -34,7 +36,8 @@ export function GithubMark({ className = 'w-4 h-4' }) {
 }
 
 export function Logo({ className = 'w-7 h-7' }) {
-  return <img src="/logo.svg" alt="" className={className} />;
+  const { icon } = useAppearance();
+  return <Tile icon={icon} className={className} />;
 }
 
 export function ThemeToggle() {

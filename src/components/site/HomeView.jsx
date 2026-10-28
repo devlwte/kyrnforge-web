@@ -59,8 +59,8 @@ export default function HomeView({ catalog, navigate }) {
         <section className="pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-16 items-end">
           <div className="space-y-6">
             <p className="eyebrow">Estudio independiente</p>
-            <h1 className="font-serif text-[2.75rem] sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight">
-              Software, juegos y herramientas <em className="text-accent">hechos a mano.</em>
+            <h1 className="display text-[2.5rem] sm:text-5xl lg:text-6xl leading-[1.05]">
+              Software, juegos y herramientas <em className="not-italic text-accent">hechos a mano.</em>
             </h1>
             <p className="text-lg text-muted leading-relaxed max-w-xl">
               KyrnForge es donde publico lo que voy terminando: aplicaciones de escritorio para Windows,
@@ -118,7 +118,7 @@ export default function HomeView({ catalog, navigate }) {
           <div className="grid md:grid-cols-[1fr_auto] gap-8 p-6 sm:p-10 items-center">
             <div className="space-y-4 max-w-2xl">
               <p className="eyebrow">Próximamente</p>
-              <h2 className="font-serif text-4xl sm:text-5xl leading-tight">Todo en un solo launcher.</h2>
+              <h2 className="display text-3xl sm:text-4xl leading-tight">Todo en un solo launcher.</h2>
               <p className="text-muted leading-relaxed">
                 Estoy preparando un launcher para instalar, actualizar y abrir cualquier creación de KyrnForge
                 desde un mismo lugar, sin ir buscando enlaces uno por uno. Mientras tanto, cada ficha tiene su

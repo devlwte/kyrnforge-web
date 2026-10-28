@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Download, ExternalLink, LogOut, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Logo, ThemeToggle } from './site/Layout';
+import { MARKS, PALETTES, THEMES, normalizeAppearance } from '../brand';
+import { useAppearance } from '../appearance';
+import { Mark, Tile } from './site/Brand';
 
 const TOKEN_KEY = 'kyrnforge_auth_token';
 
@@ -402,6 +405,159 @@ function CreationsTab({ items, onSave, saving }) {
   );
 }
 
+const LIGHT_UI = { bg: '#f3f4f2', surface: '#ffffff', line: '#dcdfdb', fg: '#181a19', muted: '#565b58' };
+const DARK_UI = { bg: '#111312', surface: '#191c1b', line: '#2a2e2c', fg: '#e6e9e7', muted: '#a2a8a4' };
+
+function tileStyle(colors) {
+  return { '--tile-bg': colors.accent, '--tile-fg': colors.on };
+}
+
+function Option({ selected, onSelect, children, className = '' }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={`card p-4 text-left transition hover:border-dim ${selected ? 'border-accent ring-1 ring-accent' : ''} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Preview({ appearance, ui, mode }) {
+  const colors = PALETTES[appearance.accent][mode];
+  return (
+    <div className="rounded-xl border p-4 space-y-4 min-w-0" style={{ background: ui.bg, borderColor: ui.line, color: ui.fg }}>
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <Tile icon={appearance.icon} className="w-6 h-6" style={tileStyle(colors)} />
+        KyrnForge
+        <span className="ml-auto flex gap-3 text-xs font-normal" style={{ color: ui.muted }}>
+          <span>Creaciones</span>
+          <span>Acortador</span>
+        </span>
+      </div>
+      <p className="text-xl font-semibold tracking-tight leading-snug">
+        Software y juegos <span style={{ color: colors.accent }}>hechos a mano.</span>
+      </p>
+      <div className="flex flex-wrap gap-2 text-xs font-medium">
+        <span className="rounded-md px-3 py-1.5" style={{ background: colors.accent, color: colors.on }}>Ver creaciones</span>
+        <span className="rounded-md px-3 py-1.5 border" style={{ background: ui.surface, borderColor: ui.line }}>Quién está detrás</span>
+      </div>
+    </div>
+  );
+}
+
+function AppearanceTab({ settings, token, onSaved }) {
+  const saved = normalizeAppearance(settings?.appearance);
+  const [draft, setDraft] = useState(saved);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const changed = JSON.stringify(draft) !== JSON.stringify(saved);
+  const set = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const save = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const next = { ...(settings || {}), appearance: draft };
+      await api('/api/v1/content', token, { siteSettings: next });
+      onSaved(next);
+      setMessage('Guardado. La web ya usa la nueva apariencia.');
+    } catch (err) {
+      setMessage(`No se pudo guardar: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="space-y-10">
+      <div>
+        <h1 className="text-2xl font-semibold">Apariencia</h1>
+        <p className="text-sm text-muted mt-1">Color, icono y tema con los que se ve la web. Cada visitante puede cambiar entre claro y oscuro.</p>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="font-semibold">Color</h2>
+        <div role="radiogroup" aria-label="Color" className="grid sm:grid-cols-2 gap-3">
+          {Object.entries(PALETTES).map(([id, palette]) => (
+            <Option key={id} selected={draft.accent === id} onSelect={() => set('accent', id)} className="flex items-center gap-4">
+              <span className="flex gap-1.5 flex-shrink-0">
+                <Tile icon={draft.icon} className="w-10 h-10" style={tileStyle(palette.light)} />
+                <Tile icon={draft.icon} className="w-10 h-10" style={tileStyle(palette.dark)} />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium">{palette.name}</span>
+                <span className="block text-sm text-muted">{palette.note}</span>
+              </span>
+            </Option>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="font-semibold">Icono</h2>
+        <div role="radiogroup" aria-label="Icono" className="grid sm:grid-cols-3 gap-3">
+          {Object.entries(MARKS).map(([id, mark]) => {
+            const colors = PALETTES[draft.accent].light;
+            return (
+              <Option key={id} selected={draft.icon === id} onSelect={() => set('icon', id)} className="space-y-3">
+                <span className="flex items-end gap-3">
+                  <Tile icon={id} className="w-14 h-14" style={tileStyle(colors)} />
+                  <Tile icon={id} className="w-8 h-8" style={tileStyle(colors)} />
+                  <Tile icon={id} className="w-4 h-4" style={tileStyle(colors)} />
+                  <Mark icon={id} className="w-8 h-8 text-fg" />
+                </span>
+                <span className="block font-medium">{mark.name}</span>
+              </Option>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="font-semibold">Tema para quien entra por primera vez</h2>
+        <div role="radiogroup" aria-label="Tema por defecto" className="inline-flex flex-wrap rounded-lg border border-line p-1 gap-1">
+          {Object.entries(THEMES).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={draft.theme === id}
+              onClick={() => set('theme', id)}
+              className={`px-3 py-1.5 rounded-md text-sm transition ${draft.theme === id ? 'bg-accent text-accent-fg' : 'text-muted hover:text-fg'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="font-semibold">Vista previa</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Preview appearance={draft} ui={LIGHT_UI} mode="light" />
+          <Preview appearance={draft} ui={DARK_UI} mode="dark" />
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 py-4 bg-bg/95 backdrop-blur border-t border-line flex flex-wrap items-center gap-3">
+        <button type="button" onClick={save} disabled={!changed || saving} className="btn-primary disabled:opacity-50">
+          {saving ? 'Guardando…' : 'Guardar y publicar'}
+        </button>
+        {changed && (
+          <button type="button" onClick={() => setDraft(saved)} className="btn-ghost">
+            Deshacer cambios
+          </button>
+        )}
+        {message && <span className="text-sm text-muted">{message}</span>}
+      </div>
+    </section>
+  );
+}
+
 function BackupTab({ token, onRestored }) {
   const fileRef = useRef(null);
   const [pending, setPending] = useState(null);
@@ -492,6 +648,8 @@ export default function ModDashboard({ navigate }) {
   const [token, setToken] = useState(readToken);
   const [tab, setTab] = useState('creaciones');
   const [items, setItems] = useState(null);
+  const [settings, setSettings] = useState(null);
+  const brand = useAppearance();
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
 
@@ -502,7 +660,10 @@ export default function ModDashboard({ navigate }) {
   useEffect(() => {
     if (!token) return;
     api(`/api/v1/content?t=${Date.now()}`)
-      .then((data) => setItems(unify(data.availableApps, data.projects)))
+      .then((data) => {
+        setSettings(data.siteSettings || {});
+        setItems(unify(data.availableApps, data.projects));
+      })
       .catch(() => setItems([]));
   }, [token]);
 
@@ -550,6 +711,7 @@ export default function ModDashboard({ navigate }) {
 
   const tabs = [
     ['creaciones', 'Creaciones'],
+    ['apariencia', 'Apariencia'],
     ['copia', 'Copia de seguridad'],
   ];
 
@@ -598,6 +760,15 @@ export default function ModDashboard({ navigate }) {
           <p className="text-muted">Cargando…</p>
         ) : tab === 'creaciones' ? (
           <CreationsTab items={items} onSave={save} saving={saving} />
+        ) : tab === 'apariencia' ? (
+          <AppearanceTab
+            settings={settings}
+            token={token}
+            onSaved={(next) => {
+              setSettings(next);
+              brand.update(next.appearance);
+            }}
+          />
         ) : (
           <BackupTab token={token} onRestored={setItems} />
         )}

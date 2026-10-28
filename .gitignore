@@ -15,6 +15,7 @@ dist-ssr
 
 # Screenshots
 *.png
+!public/brand/**/*.png
 
 # Editor directories and files
 .vscode/*

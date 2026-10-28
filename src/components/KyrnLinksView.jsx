@@ -110,7 +110,7 @@ export default function KyrnLinksView({ navigate, current }) {
     <Layout navigate={navigate} current={current}>
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
         <p className="eyebrow">Herramienta</p>
-        <h1 className="font-serif text-5xl sm:text-6xl leading-[1.05] mt-4">Acorta un enlace.</h1>
+        <h1 className="display text-4xl sm:text-5xl leading-[1.05] mt-4">Acorta un enlace.</h1>
         <p className="mt-5 text-lg text-muted leading-relaxed">
           Pega una dirección larga y llévate una corta de kyrnforge.dev. No hace falta cuenta. Los enlaces duran
           90 días y no pueden apuntar a sitios para adultos.

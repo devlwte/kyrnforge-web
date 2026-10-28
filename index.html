@@ -3,17 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-    <meta name="theme-color" content="#131211" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/brand/kyrnforge-180.png" />
+    <meta name="theme-color" content="#111312" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f4f2" media="(prefers-color-scheme: light)" />
     <script>
       (function () {
-        var t;
-        try { t = localStorage.getItem('kyrnforge_theme'); } catch (e) {}
-        if (t !== 'light' && t !== 'dark') {
-          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        document.documentElement.dataset.theme = t;
+        var root = document.documentElement, saved, cached;
+        try {
+          saved = localStorage.getItem('kyrnforge_theme');
+          cached = JSON.parse(localStorage.getItem('kyrnforge_appearance') || 'null');
+        } catch (e) {}
+        cached = cached || {};
+        if (!root.dataset.accent && cached.accent) root.dataset.accent = cached.accent;
+        var fallback = root.dataset.defaultTheme || cached.theme;
+        var t = saved === 'light' || saved === 'dark' ? saved : fallback === 'light' || fallback === 'dark' ? fallback : null;
+        if (!t) t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.dataset.theme = t;
       })();
     </script>
 
@@ -43,7 +49,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <script id="schema-graph" type="application/ld+json">
     {
@@ -85,7 +91,7 @@
       <main class="max-w-6xl mx-auto px-4 sm:px-6 py-16 space-y-16">
         <section class="max-w-2xl space-y-5">
           <p class="eyebrow">Estudio independiente</p>
-          <h1 class="font-serif text-5xl leading-[1.05]">Software, juegos y herramientas hechos a mano.</h1>
+          <h1 class="display text-5xl leading-[1.05]">Software, juegos y herramientas hechos a mano.</h1>
           <p class="text-muted text-lg leading-relaxed">KyrnForge es donde publico lo que voy terminando: aplicaciones de escritorio para Windows, apps y juegos para Android y utilidades para Minecraft. Todo es gratuito.</p>
         </section>
         <section id="creaciones" class="space-y-4">

@@ -33,7 +33,7 @@ export default function AppDetailView({ appId, catalog, navigate }) {
       <Layout navigate={navigate}>
         <main className="max-w-xl mx-auto px-4 sm:px-6 py-24 text-center space-y-5">
           <p className="eyebrow">404</p>
-          <h1 className="font-serif text-4xl">No encontré esa creación</h1>
+          <h1 className="display text-3xl sm:text-4xl">No encontré esa creación</h1>
           <p className="text-muted">
             No hay nada publicado en <span className="font-mono text-fg">/app/{appId}</span>. Puede que haya cambiado de nombre.
           </p>
@@ -68,7 +68,7 @@ export default function AppDetailView({ appId, catalog, navigate }) {
           <AppIcon item={app} className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl" />
           <div className="space-y-2 min-w-0">
             <p className="eyebrow">{app.category || 'Creación'}</p>
-            <h1 className="font-serif text-4xl sm:text-5xl leading-tight break-words">{app.title}</h1>
+            <h1 className="display text-3xl sm:text-4xl leading-tight break-words">{app.title}</h1>
           </div>
         </section>
 

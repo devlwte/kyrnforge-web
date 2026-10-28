@@ -10,7 +10,7 @@ export default function AboutView({ navigate }) {
     <Layout navigate={navigate} current="/acerca">
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
         <p className="eyebrow">Acerca de</p>
-        <h1 className="font-serif text-5xl sm:text-6xl leading-[1.05] mt-4">Un taller pequeño, sin prisa.</h1>
+        <h1 className="display text-4xl sm:text-5xl leading-[1.05] mt-4">Un taller pequeño, sin prisa.</h1>
 
         <div className="mt-10 space-y-6 text-lg text-muted leading-relaxed">
           <p>

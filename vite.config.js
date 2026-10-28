@@ -58,6 +58,13 @@ function kyrnforgeApiPlugin() {
           return token === 'kyrnforge2026' || token === 'admin';
         };
 
+        if (url === '/api/v1/auth' && req.method === 'POST') {
+          const body = await readBody();
+          const ok = ['kyrnforge2026', 'admin'].includes(String(body?.password || '').trim());
+          res.statusCode = ok ? 200 : 401;
+          return res.end(JSON.stringify(ok ? { success: true } : { success: false, error: 'Contraseña incorrecta.' }));
+        }
+
         // --- 1. /api/v1/apps (Manage carousel apps in JSON) ---
         if (url === '/api/v1/apps' || url.startsWith('/api/v1/apps?')) {
           if (req.method === 'GET') {

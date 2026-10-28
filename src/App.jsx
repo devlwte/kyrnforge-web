@@ -40,7 +40,15 @@ const fetchJson = (url) =>
 export default function App() {
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [availableApps, setAvailableApps] = useState(() => readCached('kyrnforge_available_apps') || initialAvailableApps || []);
-  const [projects, setProjects] = useState(() => readCached('kyrnforge_projects') || initialProjects || []);
+  const [projects, setProjects] = useState(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('kyrnforge_projects') || 'null');
+      if (Array.isArray(cached)) return cached;
+    } catch {
+      // Sin caché se usa el catálogo empaquetado.
+    }
+    return initialProjects || [];
+  });
 
   const catalog = useMemo(() => buildCatalog(availableApps, projects), [availableApps, projects]);
 
@@ -83,14 +91,12 @@ export default function App() {
       if (!Array.isArray(apps) || apps.length === 0) {
         [apps, list] = await Promise.all([fetchJson(`/data/apps.json?t=${t}`), fetchJson(`/data/projects.json?t=${t}`)]);
       }
-      if (Array.isArray(apps) && apps.length > 0) {
-        setAvailableApps(apps);
-        writeCached('kyrnforge_available_apps', apps);
-      }
-      if (Array.isArray(list) && list.length > 0) {
-        setProjects(list);
-        writeCached('kyrnforge_projects', list);
-      }
+      if (!Array.isArray(apps) || apps.length === 0) return;
+      const projectList = Array.isArray(list) ? list : [];
+      setAvailableApps(apps);
+      setProjects(projectList);
+      writeCached('kyrnforge_available_apps', apps);
+      writeCached('kyrnforge_projects', projectList);
     };
     load();
   }, []);
@@ -110,7 +116,7 @@ export default function App() {
   }
 
   if (currentPath === '/mod' || currentPath === '/mod/') {
-    return <Suspense fallback={lazyFallback}><ModDashboard onNavigateHome={goHome} /></Suspense>;
+    return <Suspense fallback={lazyFallback}><ModDashboard navigate={navigateTo} /></Suspense>;
   }
 
   if (currentPath === '/links' || currentPath.startsWith('/links/') || currentPath === '/sh' || currentPath.startsWith('/sh/')) {

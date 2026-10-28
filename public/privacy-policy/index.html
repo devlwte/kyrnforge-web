@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Políticas de Privacidad | KyrnForge</title>
+    <style>
+        :root {
+            --bg: #090C10;
+            --surface: #121722;
+            --surface-card: #161C2B;
+            --border: #242E44;
+            --cyan: #00F2FE;
+            --text-primary: #F2F6FA;
+            --text-secondary: #8C9BAE;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg);
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 840px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .brand {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 16px;
+        }
+        p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .app-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .app-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+        }
+        .app-card:hover {
+            border-color: var(--cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.15);
+        }
+        .app-info h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .app-info span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+        .badge {
+            background: rgba(0, 242, 254, 0.12);
+            color: var(--cyan);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid var(--cyan);
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 12px;
+            color: #576579;
+        }
+        a.home-link {
+            color: var(--cyan);
+            text-decoration: none;
+            font-size: 13px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        a.home-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <span class="brand">KyrnForge Legal Directory</span>
+    <h1>Centro de Políticas de Privacidad</h1>
+    <p>Encuentra la política de privacidad oficial y términos de seguridad de datos correspondientes a cada aplicación desarrollada por <strong>KyrnForge Technologies</strong>.</p>
+
+    <div class="app-list">
+        <!-- AuraSound DSP -->
+        <a href="/privacy-policy/aurasound" class="app-card">
+            <div class="app-info">
+                <h3>AuraSound DSP</h3>
+                <span>com.kyrnforge.dsp • Audio Signal Processing &amp; Dynamics</span>
+            </div>
+            <div class="badge">Ver Política &rarr;</div>
+        </a>
+    </div>
+
+    <a href="https://kyrnforge.dev" class="home-link">&larr; Volver al portal principal de KyrnForge</a>
+
+    <footer>
+        &copy; 2026 KyrnForge. Todos los derechos reservados.
+    </footer>
+</div>
+</body>
+</html>

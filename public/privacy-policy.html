@@ -4,131 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Política de Privacidad - AuraSound DSP | KyrnForge</title>
-    <style>
-        :root {
-            --bg: #090C10;
-            --surface: #121722;
-            --surface-card: #161C2B;
-            --border: #242E44;
-            --cyan: #00F2FE;
-            --text-primary: #F2F6FA;
-            --text-secondary: #8C9BAE;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: var(--text-primary);
-            background-color: var(--bg);
-            padding: 40px 20px;
-        }
-        .container {
-            max-width: 840px;
-            margin: 0 auto;
-            background: var(--surface);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .brand {
-            display: inline-block;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--cyan);
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 16px;
-        }
-        .meta {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-        }
-        .highlight {
-            background: var(--surface-card);
-            border-left: 4px solid var(--cyan);
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            font-size: 14px;
-            color: #d1d9e2;
-        }
-        h2 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--cyan);
-            margin-top: 32px;
-            margin-bottom: 12px;
-        }
-        p {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 14px;
-        }
-        ul {
-            list-style: none;
-            margin-bottom: 20px;
-        }
-        li {
-            position: relative;
-            padding-left: 24px;
-            margin-bottom: 12px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        li::before {
-            content: "•";
-            position: absolute;
-            left: 8px;
-            color: var(--cyan);
-            font-weight: bold;
-        }
-        code {
-            background: #1c2436;
-            color: var(--cyan);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 13px;
-        }
-        footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            text-align: center;
-            font-size: 12px;
-            color: #576579;
-        }
-        a { color: var(--cyan); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="/privacy-policy/legal.css">
+    <script src="/privacy-policy/legal.js"></script>
 </head>
 <body>
-<div class="container">
-    <span class="brand">KyrnForge Legal &amp; Privacy</span>
-    <h1>Política de Privacidad de AuraSound DSP</h1>
-    <div class="meta">
-        <strong>Aplicación:</strong> AuraSound DSP (com.kyrnforge.dsp)<br>
-        <strong>Desarrollador:</strong> KyrnForge Technologies (<a href="https://kyrnforge.dev">kyrnforge.dev</a>)<br>
-        <strong>Última actualización:</strong> Octubre 2026
+<header class="top">
+    <div class="top-inner">
+        <a href="/" class="brand"><img src="/icon.svg" alt=""><span>KyrnForge</span></a>
+        <button type="button" id="theme" class="theme" aria-label="Cambiar tema"></button>
     </div>
+</header>
 
-    <div class="highlight">
+<main>
+    <p class="eyebrow">KyrnForge Legal &amp; Privacy</p>
+    <h1>Política de Privacidad de AuraSound DSP</h1>
+
+    <dl class="meta">
+        <div><dt>Aplicación</dt><dd>AuraSound DSP (com.kyrnforge.dsp)</dd></div>
+        <div><dt>Desarrollador</dt><dd>KyrnForge Technologies (<a href="https://kyrnforge.dev">kyrnforge.dev</a>)</dd></div>
+        <div><dt>Última actualización</dt><dd>Octubre 2026</dd></div>
+    </dl>
+
+    <div class="summary">
         <strong>Resumen de Privacidad:</strong> AuraSound DSP es una herramienta de procesamiento de señal digital de audio (DSP) que opera <strong>100% de manera local</strong> en tu dispositivo Android. <strong>No recopilamos, no transmitimos, no almacenamos ni vendemos ningún dato personal o de audio.</strong>
     </div>
 
     <h2>1. Uso de Permisos y Tratamiento de Señal de Audio</h2>
     <p>AuraSound DSP utiliza permisos específicos del sistema Android exclusivamente para funciones de ingeniería de sonido en tiempo real:</p>
-    <ul>
+    <ul class="points">
         <li><strong>RECORD_AUDIO (Permiso de Captura de Audio):</strong>
             Requerido técnicamente por la API nativa de Android <code>android.media.audiofx.Visualizer</code> para muestrear frecuencias de audio (FFT) y renderizar el espectro sonoro en pantalla. <strong>La aplicación jamás graba tu micrófono, ni conversaciones, ni almacena archivos de voz, ni transmite audio a ningún servidor.</strong> La señal se calcula en la memoria RAM volátil del dispositivo y se descarta de forma instantánea.
         </li>
@@ -144,7 +51,7 @@
     </ul>
 
     <h2>2. Datos de Usuario y Seguridad (Data Safety)</h2>
-    <ul>
+    <ul class="points">
         <li><strong>Sin recopilación de datos:</strong> No solicitamos ni almacenamos nombres, correos electrónicos, cuentas ni ubicaciones.</li>
         <li><strong>Sin rastreadores ni anuncios:</strong> La aplicación no contiene SDKs de publicidad de terceros, cookies ni herramientas de telemetría o seguimiento.</li>
         <li><strong>Almacenamiento local seguro:</strong> Tus preferencias de ecualización y presets seleccionados se guardan localmente en tu propio teléfono y nunca salen de él.</li>
@@ -156,9 +63,11 @@
     <h2>4. Contacto y Soporte</h2>
     <p>Para cualquier consulta técnica o referente a la privacidad, puedes ponerte en contacto a través de nuestro portal oficial: <a href="https://kyrnforge.dev">https://kyrnforge.dev</a>.</p>
 
-    <footer>
-        &copy; 2026 KyrnForge. Todos los derechos reservados.
-    </footer>
-</div>
+    <a href="/privacy-policy/" class="back">&larr; Todas las políticas</a>
+</main>
+
+<footer>
+    &copy; 2026 KyrnForge. Todos los derechos reservados.
+</footer>
 </body>
 </html>

@@ -1,6 +1,8 @@
 {
   "version": 1,
-  "include": ["/*"],
+  "include": [
+    "/*"
+  ],
   "exclude": [
     "/assets/*",
     "/projects/*",
@@ -12,6 +14,8 @@
     "/icons.svg",
     "/skins-icon.png",
     "/ads.txt",
-    "/robots.txt"
+    "/robots.txt",
+    "/privacy-policy/legal.css",
+    "/privacy-policy/legal.js"
   ]
 }

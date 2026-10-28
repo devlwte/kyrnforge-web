@@ -1,588 +1,261 @@
-import React, { useState } from 'react';
-import { 
-  Link2, 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  ShieldCheck, 
-  ArrowLeft, 
-  ArrowRight, 
-  Trash2, 
-  AlertCircle, 
-  QrCode, 
-  Globe, 
-  SlidersHorizontal, 
-  Sun, 
-  Moon, 
-  Zap 
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, ArrowRight, Check, Copy, ExternalLink, QrCode, Trash2 } from 'lucide-react';
+import Layout from './site/Layout';
 
-const LOCAL_STORAGE_KEY = 'kyrn_recent_links_v1';
-const THEME_STORAGE_KEY = 'kyrn_links_theme_v1';
+const HISTORY_KEY = 'kyrn_recent_links_v1';
 
-export default function KyrnLinksView({ onNavigateHome }) {
+function loadHistory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(list) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+  } catch {
+    // El historial es opcional.
+  }
+}
+
+function CopyButton({ text, id, copiedId, onCopy, className = '' }) {
+  const done = copiedId === id;
+  return (
+    <button type="button" onClick={() => onCopy(text, id)} className={className}>
+      {done ? <Check className="w-4 h-4 text-ok" /> : <Copy className="w-4 h-4" />}
+      <span>{done ? 'Copiado' : 'Copiar'}</span>
+    </button>
+  );
+}
+
+export default function KyrnLinksView({ navigate, current }) {
   const [targetUrl, setTargetUrl] = useState('');
   const [customSlug, setCustomSlug] = useState('');
-  const [showOptions, setShowOptions] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successLink, setSuccessLink] = useState(null);
+  const [showAlias, setShowAlias] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
   const [showQr, setShowQr] = useState(false);
+  const [history, setHistory] = useState(loadHistory);
 
-  // Theme: Light or Dark mode (persisted in localStorage, defaults to dark)
-  const [isDark, setIsDark] = useState(() => {
-    try {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      if (savedTheme) return savedTheme === 'dark';
-      return true; // Default dark
-    } catch (_) {
-      return true;
-    }
-  });
+  useEffect(() => {
+    document.title = 'Acortador de enlaces · KyrnForge';
+  }, []);
 
-  // Recent links persisted in localStorage
-  const [recentLinks, setRecentLinks] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch (_) {
-      return [];
-    }
-  });
-
-  const toggleTheme = () => {
-    setIsDark(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, next ? 'dark' : 'light');
-      } catch (_) {}
-      return next;
-    });
-  };
-
-  const saveToLocalHistory = (newLink) => {
-    try {
-      const updated = [newLink, ...recentLinks.filter(l => l.slug !== newLink.slug)].slice(0, 15);
-      setRecentLinks(updated);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-    } catch (_) {}
-  };
-
-  const removeFromHistory = (slug) => {
-    const updated = recentLinks.filter(l => l.slug !== slug);
-    setRecentLinks(updated);
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-    } catch (_) {}
-  };
-
-  const handleCopy = (text, id = 'main') => {
+  const copy = (text, id) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleSubmit = async (e) => {
+  const remember = (link) => {
+    const next = [link, ...history.filter((l) => l.slug !== link.slug)].slice(0, 15);
+    setHistory(next);
+    saveHistory(next);
+  };
+
+  const forget = (slug) => {
+    const next = history.filter((l) => l.slug !== slug);
+    setHistory(next);
+    saveHistory(next);
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessLink(null);
+    setError('');
+    setResult(null);
     setShowQr(false);
 
-    const cleanUrl = targetUrl.trim();
-    if (!cleanUrl) {
-      setErrorMsg('Por favor ingresa un enlace para acortar.');
+    const url = targetUrl.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      setError('El enlace tiene que empezar por https:// o http://');
       return;
     }
 
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      setErrorMsg('El enlace debe comenzar con https:// o http://');
-      return;
-    }
-
-    setIsLoading(true);
-
+    setLoading(true);
     try {
       const res = await fetch('/api/v1/shorten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: cleanUrl,
-          customSlug: customSlug.trim() || undefined
-        })
+        body: JSON.stringify({ url, customSlug: customSlug.trim() || undefined }),
       });
-
       const data = await res.json();
-
       if (!res.ok || !data.ok) {
-        setErrorMsg(data.error || 'No se pudo acortar el enlace. Verifica los datos.');
-      } else {
-        const fullShortUrl = data.shortUrl || `${window.location.origin}/l/${data.slug}`;
-        const linkItem = {
-          slug: data.slug,
-          shortUrl: fullShortUrl,
-          targetUrl: data.targetUrl || cleanUrl,
-          hostname: data.hostname || new URL(cleanUrl).hostname,
-          createdAt: data.createdAt || new Date().toISOString()
-        };
-        setSuccessLink(linkItem);
-        saveToLocalHistory(linkItem);
-        setTargetUrl('');
-        setCustomSlug('');
+        setError(data.error || 'No se pudo acortar el enlace.');
+        return;
       }
-    } catch (err) {
-      setErrorMsg('Error de conexión con el servidor. Inténtalo de nuevo.');
+      const link = {
+        slug: data.slug,
+        shortUrl: data.shortUrl || `${window.location.origin}/l/${data.slug}`,
+        targetUrl: data.targetUrl || url,
+        hostname: data.hostname || new URL(url).hostname,
+        createdAt: data.createdAt || new Date().toISOString(),
+      };
+      setResult(link);
+      remember(link);
+      setTargetUrl('');
+      setCustomSlug('');
+    } catch {
+      setError('No hubo respuesta del servidor. Prueba otra vez en un momento.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 font-sans ${
-      isDark ? 'bg-[#090d16] text-[#f1f5f9]' : 'bg-[#f8fafc] text-[#0f172a]'
-    }`}>
-      
-      {/* Top Header Navigation */}
-      <header className={`border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
-        isDark ? 'border-[#1e263d] bg-[#090d16]/90' : 'border-[#e2e8f0] bg-white/90'
-      }`}>
-        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 h-16 flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-            <button
-              onClick={onNavigateHome}
-              className={`text-xs font-medium transition flex items-center space-x-1.5 py-1 px-2 rounded-lg flex-shrink-0 ${
-                isDark ? 'text-[#94a3b8] hover:text-white hover:bg-[#141b2c]' : 'text-[#64748b] hover:text-black hover:bg-slate-100'
-              }`}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>KyrnForge</span>
+    <Layout navigate={navigate} current={current}>
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
+        <p className="eyebrow">Herramienta</p>
+        <h1 className="font-serif text-5xl sm:text-6xl leading-[1.05] mt-4">Acorta un enlace.</h1>
+        <p className="mt-5 text-lg text-muted leading-relaxed">
+          Pega una dirección larga y llévate una corta de kyrnforge.dev. No hace falta cuenta. Los enlaces duran
+          90 días y no pueden apuntar a sitios para adultos.
+        </p>
+
+        <form onSubmit={submit} className="mt-10 card p-4 sm:p-6 space-y-4">
+          <label htmlFor="target-url" className="text-sm font-medium">Enlace</label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              id="target-url"
+              type="url"
+              inputMode="url"
+              value={targetUrl}
+              onChange={(e) => setTargetUrl(e.target.value)}
+              placeholder="https://"
+              required
+              className="flex-1 min-w-0 rounded-lg border border-line bg-bg px-3.5 py-3 text-[15px] placeholder:text-dim outline-none focus:border-accent transition"
+            />
+            <button type="submit" disabled={loading} className="btn-primary py-3 disabled:opacity-60">
+              {loading ? 'Acortando…' : 'Acortar'}
+              {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
-            <span className={`flex-shrink-0 ${isDark ? 'text-[#2a3450]' : 'text-slate-300'}`}>/</span>
-            <div className="flex items-center space-x-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/30 flex-shrink-0">
-                <Link2 className="w-4 h-4" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold tracking-tight truncate">Kyrn Links</span>
-            </div>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0">
-            {/* Theme Toggle Button (Light / Dark) */}
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-xl border text-xs font-medium transition flex items-center space-x-1.5 ${
-                isDark 
-                  ? 'bg-[#141a29] border-[#222c44] text-[#94a3b8] hover:text-amber-400 hover:border-amber-500/40' 
-                  : 'bg-white border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 shadow-sm'
-              }`}
-              title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
-              aria-label="Alternar tema claro y oscuro"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
-              <span className="hidden sm:inline text-[11px] font-mono">
-                {isDark ? 'Claro' : 'Oscuro'}
-              </span>
-            </button>
-
-            <span className="hidden sm:flex text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-500 items-center space-x-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Filtro Seguro</span>
-            </span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-3xl mx-auto px-3.5 sm:px-6 py-8 sm:py-16 space-y-8 sm:space-y-10">
-        
-        {/* Clean Modern Hero */}
-        <div className="text-center space-y-3 px-2">
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border max-w-full text-center ${
-            isDark ? 'bg-[#121827] border-[#1e263d] text-[#818cf8]' : 'bg-indigo-50 border-indigo-100 text-indigo-700'
-          }`}>
-            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate sm:whitespace-normal">Acortador público y seguro · Red Edge Global</span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight break-words">
-            Enlaces cortos, limpios y confiables
-          </h1>
-          <p className={`text-xs sm:text-base max-w-xl mx-auto leading-relaxed ${
-            isDark ? 'text-[#94a3b8]' : 'text-slate-600'
-          }`}>
-            Comparte enlaces seguros protegidos contra spam, malware y contenido para adultos. Sin registro obligatorio y listo en 1 clic.
-          </p>
-        </div>
-
-        {/* Shortener Card */}
-        <div className={`border rounded-xl sm:rounded-2xl p-4 sm:p-8 transition-all shadow-xl ${
-          isDark 
-            ? 'bg-[#111625] border-[#1e263d] shadow-black/25' 
-            : 'bg-white border-slate-200/80 shadow-slate-200/50'
-        }`}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* Input URL */}
-            <div className="space-y-1.5">
-              <label className={`text-xs font-semibold flex items-center justify-between ${
-                isDark ? 'text-[#cbd5e1]' : 'text-slate-700'
-              }`}>
-                <span>Ingresa el enlace que deseas acortar</span>
-                <span className={`text-[11px] font-mono ${isDark ? 'text-[#64748b]' : 'text-slate-400'}`}>
-                  HTTPS o HTTP
-                </span>
-              </label>
-              <div className="relative">
-                <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
-                  isDark ? 'text-[#64748b]' : 'text-slate-400'
-                }`}>
-                  <Globe className="w-4 h-4" />
-                </div>
+          {showAlias ? (
+            <div className="space-y-2">
+              <label htmlFor="alias" className="text-sm font-medium">Nombre propio (opcional)</label>
+              <div className="flex rounded-lg border border-line bg-bg overflow-hidden focus-within:border-accent transition">
+                <span className="px-3 py-2.5 text-sm text-dim font-mono border-r border-line bg-raised whitespace-nowrap">/l/</span>
                 <input
-                  type="url"
-                  value={targetUrl}
-                  onChange={(e) => setTargetUrl(e.target.value)}
-                  placeholder="https://ejemplo.com/recurso-o-documento-largo..."
-                  required
-                  className={`w-full min-w-0 border rounded-xl pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm transition outline-none ${
-                    isDark 
-                      ? 'bg-[#090d16] border-[#1e263d] text-[#f1f5f9] placeholder-[#475569] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25' 
-                      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600/25 focus:bg-white'
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* Custom Alias Toggle */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setShowOptions(!showOptions)}
-                className={`text-xs font-medium flex items-center space-x-1.5 transition ${
-                  isDark ? 'text-[#818cf8] hover:text-[#a5b4fc]' : 'text-indigo-600 hover:text-indigo-700'
-                }`}
-              >
-                <SlidersHorizontal className="w-3 h-3 flex-shrink-0" />
-                <span>{showOptions ? 'Ocultar opciones avanzadas' : 'Personalizar alias corto (opcional)'}</span>
-              </button>
-
-              {showOptions && (
-                <div className={`mt-3 p-3 sm:p-3.5 rounded-xl border space-y-2 ${
-                  isDark ? 'bg-[#090d16] border-[#1e263d]' : 'bg-slate-50 border-slate-200'
-                }`}>
-                  <label className={`text-[11px] font-medium block ${isDark ? 'text-[#94a3b8]' : 'text-slate-600'}`}>
-                    Alias personalizado
-                  </label>
-                  <div className="flex flex-col sm:flex-row sm:items-center w-full">
-                    <span className={`text-xs px-3 py-2 font-mono border rounded-t-lg sm:rounded-t-none sm:rounded-l-lg border-b-0 sm:border-b sm:border-r-0 select-none ${
-                      isDark ? 'bg-[#141a29] border-[#1e263d] text-[#64748b]' : 'bg-slate-200 border-slate-300 text-slate-500'
-                    }`}>
-                      kyrnforge.dev/l/
-                    </span>
-                    <input
-                      type="text"
-                      value={customSlug}
-                      onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
-                      placeholder="mi-enlace"
-                      className={`w-full sm:flex-1 min-w-0 border rounded-b-lg sm:rounded-b-none sm:rounded-r-lg px-3 py-2 text-xs font-mono outline-none ${
-                        isDark 
-                          ? 'bg-[#0d121f] border-[#1e263d] text-[#f1f5f9] focus:border-indigo-500' 
-                          : 'bg-white border-slate-300 text-slate-900 focus:border-indigo-600'
-                      }`}
-                    />
-                  </div>
-                  <p className={`text-[10px] ${isDark ? 'text-[#64748b]' : 'text-slate-400'}`}>
-                    Solo letras, números y guiones. Mínimo 3 caracteres.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Error Message */}
-            {errorMsg && (
-              <div className="p-3 sm:p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span className="font-medium break-words">{errorMsg}</span>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 sm:py-3.5 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/25 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span>Verificando y acortando...</span>
-              ) : (
-                <>
-                  <span>ACORTAR ENLACE</span>
-                  <ArrowRight className="w-4 h-4 flex-shrink-0" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Success Generated Card */}
-          {successLink && (
-            <div className={`p-3.5 sm:p-5 rounded-xl border space-y-3 mt-5 transition-all animate-in fade-in ${
-              isDark 
-                ? 'bg-[#151c2e] border-indigo-500/40' 
-                : 'bg-indigo-50/70 border-indigo-200'
-            }`}>
-              <div className="flex items-center justify-between gap-2 min-w-0">
-                <span className="text-xs font-semibold text-emerald-500 flex items-center space-x-1.5 truncate">
-                  <Check className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">¡Enlace generado exitosamente!</span>
-                </span>
-                <span className={`text-[11px] font-mono truncate max-w-[120px] sm:max-w-none flex-shrink-0 ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
-                  {successLink.hostname}
-                </span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-                <input
+                  id="alias"
                   type="text"
-                  readOnly
-                  value={successLink.shortUrl}
-                  className={`w-full sm:flex-1 min-w-0 border rounded-lg px-3 py-2 text-xs font-mono select-all outline-none ${
-                    isDark 
-                      ? 'bg-[#090d16] border-[#1e263d] text-indigo-300' 
-                      : 'bg-white border-slate-200 text-indigo-700'
-                  }`}
+                  value={customSlug}
+                  onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
+                  placeholder="mi-enlace"
+                  className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono outline-none"
                 />
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(successLink.shortUrl, 'new')}
-                    className="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center justify-center space-x-1.5 transition shadow-sm active:scale-95"
-                  >
-                    {copiedId === 'new' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedId === 'new' ? '¡Copiado!' : 'Copiar'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowQr(!showQr)}
-                    className={`p-2 rounded-lg border transition flex-shrink-0 flex items-center justify-center ${
-                      isDark 
-                        ? 'bg-[#1b2235] border-[#222c44] text-[#94a3b8] hover:text-white' 
-                        : 'bg-white border-slate-200 text-slate-600 hover:text-black'
-                    }`}
-                    title="Ver código QR"
-                  >
+              </div>
+              <p className="text-xs text-dim">Letras, números y guiones. Mínimo 3 caracteres.</p>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowAlias(true)} className="text-sm text-muted hover:text-fg underline underline-offset-4 decoration-line">
+              Elegir un nombre propio
+            </button>
+          )}
+
+          {error && (
+            <p className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </p>
+          )}
+
+          {result && (
+            <div className="rounded-xl border border-accent/40 bg-accent/5 p-4 space-y-3">
+              <p className="text-sm text-muted">
+                Listo. Apunta a <span className="text-fg">{result.hostname}</span>
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  readOnly
+                  value={result.shortUrl}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 min-w-0 rounded-lg border border-line bg-bg px-3 py-2.5 font-mono text-sm outline-none"
+                />
+                <div className="flex gap-2">
+                  <CopyButton text={result.shortUrl} id="new" copiedId={copiedId} onCopy={copy} className="btn-primary flex-1 sm:flex-initial" />
+                  <button type="button" onClick={() => setShowQr((v) => !v)} className="btn-ghost px-3" aria-label="Mostrar código QR" aria-pressed={showQr}>
                     <QrCode className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-
-              {/* QR Code display */}
               {showQr && (
-                <div className="pt-2 text-center flex flex-col items-center">
-                  <div className="p-3 bg-white rounded-xl shadow-md border inline-block max-w-full">
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(successLink.shortUrl)}`}
-                      alt="Código QR del enlace"
-                      className="w-32 h-32 max-w-full"
-                    />
-                  </div>
-                  <span className={`text-[11px] mt-2 ${isDark ? 'text-[#64748b]' : 'text-slate-400'}`}>
-                    Escanea para abrir en cualquier móvil
-                  </span>
+                <div className="pt-1">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=${encodeURIComponent(result.shortUrl)}`}
+                    alt="Código QR del enlace corto"
+                    className="w-40 h-40 rounded-lg bg-white"
+                  />
                 </div>
               )}
             </div>
           )}
-        </div>
+        </form>
 
-        {/* --- PROMINENT SPONSOR AD SHOWCASE (High Viewability Banner) --- */}
-        <div className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl border transition-all ${
-          isDark 
-            ? 'bg-[#111625] border-[#1e263d]' 
-            : 'bg-white border-slate-200 shadow-sm'
-        }`}>
-          <div className="flex items-center justify-between text-[11px] mb-3 flex-wrap gap-2">
-            <span className={`font-bold uppercase tracking-wider text-[10px] ${
-              isDark ? 'text-[#64748b]' : 'text-slate-400'
-            }`}>
-              Anuncio Patrocinado
-            </span>
-            <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${
-              isDark 
-                ? 'bg-[#161c2e] text-indigo-400 border-indigo-500/20' 
-                : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-            }`}>
-              Publicidad Ética &amp; DevTools
-            </span>
-          </div>
-
-          {/* High Viewability Simulated Ad */}
-          <a
-            href="https://kyrnforge.dev"
-            target="_blank"
-            rel="noopener sponsored"
-            className={`flex flex-col md:flex-row items-start md:items-center justify-between p-3.5 sm:p-4 rounded-xl border transition gap-3.5 sm:gap-4 text-left group ${
-              isDark 
-                ? 'bg-[#0d121f] border-[#1e263d] hover:border-indigo-500/40' 
-                : 'bg-slate-50 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30'
-            }`}
-          >
-            <div className="flex items-start sm:items-center space-x-3 sm:space-x-3.5 min-w-0 w-full md:w-auto">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white text-lg sm:text-xl flex-shrink-0 shadow-md shadow-indigo-600/30">
-                ⚡
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className={`text-xs sm:text-sm font-bold transition truncate max-w-full ${
-                    isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
-                  }`}>
-                    Servidores Cloud NVMe &amp; VPS Ultrarrápidos
-                  </h4>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30 whitespace-nowrap">
-                    OFERTA DEV
-                  </span>
-                </div>
-                <p className={`text-xs mt-0.5 line-clamp-2 sm:line-clamp-1 break-words ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
-                  Despliega microservicios y APIs locales a producción en 55 segundos. Tráfico ilimitado y 99.9% uptime.
-                </p>
-              </div>
+        {history.length > 0 && (
+          <section className="mt-14 space-y-4">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-xl font-semibold">Tus enlaces</h2>
+              <span className="text-sm text-dim">Guardados solo en este navegador</span>
             </div>
-
-            <div className="flex items-center space-x-2 flex-shrink-0 w-full md:w-auto justify-end">
-              <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-sm flex items-center space-x-1 group-hover:bg-indigo-500 transition">
-                <span>Ver Planes</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
-          </a>
-        </div>
-
-        {/* Local History Section (Saved in this browser) */}
-        {recentLinks.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className={`text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'text-[#94a3b8]' : 'text-slate-500'
-              }`}>
-                Tus Enlaces Recientes (Este dispositivo)
-              </h2>
-              <span className={`text-[11px] ${isDark ? 'text-[#64748b]' : 'text-slate-400'}`}>
-                {recentLinks.length} guardado{recentLinks.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {recentLinks.map((item) => (
-                <div
-                  key={item.slug}
-                  className={`p-3 sm:p-3.5 rounded-xl border transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                    isDark 
-                      ? 'bg-[#111625] border-[#1e263d] hover:border-[#2a3554]' 
-                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
-                  }`}
-                >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center space-x-2 min-w-0">
-                      <span className="font-mono text-xs font-bold text-indigo-500 flex-shrink-0">
-                        /l/{item.slug}
-                      </span>
-                      <span className={`flex-shrink-0 ${isDark ? 'text-[#64748b]' : 'text-slate-300'}`}>·</span>
-                      <span className={`text-[11px] truncate min-w-0 flex-1 ${
-                        isDark ? 'text-[#94a3b8]' : 'text-slate-600'
-                      }`} title={item.targetUrl}>
-                        {item.hostname}
-                      </span>
-                    </div>
+            <ul className="divide-y divide-line border-y border-line">
+              {history.map((item) => (
+                <li key={item.slug} className="py-3 flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-sm truncate">/l/{item.slug}</p>
+                    <p className="text-sm text-dim truncate" title={item.targetUrl}>{item.hostname}</p>
                   </div>
-
-                  <div className="flex items-center space-x-2 self-end sm:self-auto flex-shrink-0">
-                    <button
-                      onClick={() => handleCopy(item.shortUrl, item.slug)}
-                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border flex items-center space-x-1 transition ${
-                        isDark 
-                          ? 'bg-[#182033] border-[#242f4c] text-[#cbd5e1] hover:text-white' 
-                          : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
-                      }`}
-                      title="Copiar enlace"
-                    >
-                      {copiedId === item.slug ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedId === item.slug ? 'Copiado' : 'Copiar'}</span>
-                    </button>
-                    <a
-                      href={item.shortUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`p-1.5 rounded-lg border transition ${
-                        isDark 
-                          ? 'bg-[#182033] border-[#242f4c] text-[#94a3b8] hover:text-white' 
-                          : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-black'
-                      }`}
-                      title="Probar enlace"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                    <button
-                      onClick={() => removeFromHistory(item.slug)}
-                      className={`p-1.5 rounded-lg transition ${
-                        isDark 
-                          ? 'text-[#64748b] hover:text-rose-400 hover:bg-rose-950/20' 
-                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                      }`}
-                      title="Eliminar de la lista local"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+                  <CopyButton
+                    text={item.shortUrl}
+                    id={item.slug}
+                    copiedId={copiedId}
+                    onCopy={copy}
+                    className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg transition px-2 py-1.5"
+                  />
+                  <a
+                    href={item.shortUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Abrir enlace"
+                    className="p-2 text-dim hover:text-fg transition"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => forget(item.slug)}
+                    aria-label="Quitar de la lista"
+                    className="p-2 text-dim hover:text-red-500 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </section>
         )}
 
-        {/* Value Proposition Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-4 text-xs">
-          <div className={`p-4 rounded-xl border space-y-1.5 ${
-            isDark ? 'bg-[#111625] border-[#1e263d]' : 'bg-white border-slate-200'
-          }`}>
-            <span className="text-base">🛡️</span>
-            <h3 className="font-bold">Filtro de Seguridad</h3>
-            <p className={`leading-relaxed text-[11px] ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
-              Inspección de URLs contra contenido para adultos, phishing y malware.
+        <section className="mt-14 grid sm:grid-cols-3 gap-6 text-sm">
+          <div>
+            <h3 className="font-medium">Revisión de destino</h3>
+            <p className="text-muted mt-1 leading-relaxed">Se rechazan sitios para adultos, redes privadas y enlaces que esconden otro acortador.</p>
+          </div>
+          <div>
+            <h3 className="font-medium">Aviso antes de salir</h3>
+            <p className="text-muted mt-1 leading-relaxed">Quien abre el enlace ve a qué dominio va antes de continuar.</p>
+          </div>
+          <div>
+            <h3 className="font-medium">¿Un enlace abusivo?</h3>
+            <p className="text-muted mt-1 leading-relaxed">
+              Escribe a <a href="mailto:abuse@kyrnforge.dev" className="text-fg underline underline-offset-4 decoration-line">abuse@kyrnforge.dev</a> y lo retiro.
             </p>
           </div>
-          <div className={`p-4 rounded-xl border space-y-1.5 ${
-            isDark ? 'bg-[#111625] border-[#1e263d]' : 'bg-white border-slate-200'
-          }`}>
-            <span className="text-base">⚡</span>
-            <h3 className="font-bold">Edge CDN Global</h3>
-            <p className={`leading-relaxed text-[11px] ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
-              Redirección ultrarrápida respaldada por Cloudflare en más de 300 centros mundiales.
-            </p>
-          </div>
-          <div className={`p-4 rounded-xl border space-y-1.5 ${
-            isDark ? 'bg-[#111625] border-[#1e263d]' : 'bg-white border-slate-200'
-          }`}>
-            <span className="text-base">⏱️</span>
-            <h3 className="font-bold">Espera Estándar de 5s</h3>
-            <p className={`leading-relaxed text-[11px] ${isDark ? 'text-[#94a3b8]' : 'text-slate-500'}`}>
-              Página de destino limpia y profesional con salto directo al destino.
-            </p>
-          </div>
-        </div>
-
+        </section>
       </main>
-
-      {/* Footer */}
-      <footer className={`border-t py-8 text-center text-xs transition-colors ${
-        isDark ? 'border-[#1e263d] text-[#64748b]' : 'border-slate-200 text-slate-400'
-      }`}>
-        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>© 2026 KyrnForge · Kyrn Links Gateway</span>
-          <div className="flex items-center space-x-4">
-            <button onClick={onNavigateHome} className="hover:underline">Inicio</button>
-            <span>·</span>
-            <a href="mailto:abuse@kyrnforge.dev" className="hover:text-rose-400 transition">Reportar Enlace</a>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </Layout>
   );
 }

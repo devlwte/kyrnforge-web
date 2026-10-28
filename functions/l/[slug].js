@@ -1,5 +1,6 @@
-// Cloudflare Pages Function: /l/[slug]
-// Clean, Modern Interstitial Landing Page with Light/Dark Mode, 5s Countdown & Prominent Ad Placement
+// Página intermedia de los enlaces cortos: muestra el destino y continúa sola tras unos segundos.
+
+const WAIT_SECONDS = 5;
 
 function escapeHtml(str) {
   return String(str || '')
@@ -10,702 +11,151 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// JSON seguro dentro de <script>: evita que un "</script>" en la URL cierre la etiqueta.
+function scriptJson(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
+const STYLE = `
+  :root {
+    --bg: #f6f3ee; --surface: #fffdf9; --line: #dfd8cd; --fg: #1d1b18;
+    --muted: #5c574f; --dim: #8c867c; --accent: #b2521f; --accent-fg: #fffaf5;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #131211; --surface: #1b1a18; --line: #302d29; --fg: #ece8e1;
+    --muted: #a6a096; --dim: #706b63; --accent: #de8048; --accent-fg: #1c1109;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 24px 16px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); color: var(--fg);
+    font: 16px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { width: 100%; max-width: 460px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .brand img { width: 22px; height: 22px; }
+  .card { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px 24px; }
+  .eyebrow { font: 500 11px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0; }
+  h1 { font: 400 clamp(1.9rem, 7vw, 2.4rem)/1.1 "Instrument Serif", Georgia, serif; margin: 12px 0 0; overflow-wrap: anywhere; }
+  .target { margin: 14px 0 0; font: 13px/1.5 "JetBrains Mono", ui-monospace, monospace; color: var(--muted); overflow-wrap: anywhere; max-height: 4.5em; overflow: hidden; }
+  .bar { margin-top: 24px; height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; animation: drain ${WAIT_SECONDS}s linear forwards; }
+  @keyframes drain { to { transform: scaleX(0); } }
+  .go { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 16px; border-radius: 10px; background: var(--accent); color: var(--accent-fg); font-weight: 600; text-decoration: none; }
+  .go:hover { filter: brightness(1.08); }
+  .note { margin: 12px 0 0; text-align: center; font-size: 14px; color: var(--dim); }
+  .note button { background: none; border: 0; padding: 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  footer { margin-top: 18px; display: flex; justify-content: center; gap: 18px; font-size: 14px; }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--fg); }
+  @media (prefers-reduced-motion: reduce) { .bar span { animation: none; } }
+`;
+
+function head(title) {
+  return `<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>${title}</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var t;
+      try { t = localStorage.getItem('kyrnforge_theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
+  <style>${STYLE}</style>`;
+}
+
+const BRAND = `<a href="/" class="brand"><img src="/logo.svg" alt=""><span>KyrnForge</span></a>`;
+
 export async function onRequest(context) {
   const { env, params } = context;
   const slug = (params.slug || '').toLowerCase();
   const kv = env?.KYRNFORGE_KV || env?.KV || env?.DB || env?.kyrnforge_kv;
 
-  let link = null;
-  if (kv) {
-    link = await kv.get(`link_${slug}`, { type: 'json' });
-  }
+  const link = kv ? await kv.get(`link_${slug}`, { type: 'json' }) : null;
 
-  // Fallback / Not Found Template
   if (!link || !link.targetUrl) {
-    const notFoundHtml = `<!doctype html>
+    const html = `<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Enlace no encontrado · Kyrn Links</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #090d16;
-      --card: #111625;
-      --border: #1e263d;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --primary: #4f46e5;
-    }
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --border: #e2e8f0;
-        --text: #0f172a;
-        --text-muted: #64748b;
-        --primary: #4f46e5;
-      }
-    }
-    body {
-      margin: 0; padding: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, sans-serif;
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 30px 20px;
-      max-width: 440px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      word-break: break-word;
-    }
-    h1 { font-size: 1.25rem; font-weight: 700; margin: 12px 0 8px 0; }
-    p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 24px 0; }
-    a.btn {
-      display: inline-block;
-      background: var(--primary);
-      color: #ffffff;
-      padding: 11px 22px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-  </style>
+  ${head('Enlace no disponible · KyrnForge')}
 </head>
 <body>
-  <div class="card">
-    <div style="font-size: 2.2rem;">🔗</div>
-    <h1>Enlace no disponible</h1>
-    <p>El enlace corto no existe, ha expirado tras 90 días o fue removido por políticas de seguridad.</p>
-    <a href="/links" class="btn">Crear un nuevo enlace</a>
-  </div>
+  <main>
+    ${BRAND}
+    <div class="card">
+      <p class="eyebrow">Enlace corto</p>
+      <h1>Este enlace ya no existe.</h1>
+      <p class="target">Los enlaces caducan a los 90 días o se retiran si alguien los reporta.</p>
+      <a class="go" href="/links">Crear uno nuevo</a>
+    </div>
+  </main>
 </body>
 </html>`;
-
-    return new Response(notFoundHtml, {
-      status: 404,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
+    return new Response(html, { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 
-  const safeTarget = escapeHtml(link.targetUrl);
-  const safeHostname = escapeHtml(link.hostname || 'Enlace externo');
+  const target = escapeHtml(link.targetUrl);
+  const host = escapeHtml(link.hostname || 'otro sitio');
 
-  const pageHtml = `<!doctype html>
-<html lang="es" data-theme="dark">
+  const html = `<!doctype html>
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Continuar a ${safeHostname} · Kyrn Links</title>
-  <meta name="robots" content="noindex, nofollow">
-  <link rel="icon" type="image/svg+xml" href="/logo.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7360347214525511"
-     crossorigin="anonymous"></script>
-  
-  <style>
-    :root[data-theme="dark"] {
-      --bg: #090d16;
-      --card: #111625;
-      --card-sub: #161c2e;
-      --border: #1e263d;
-      --border-light: #283350;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
-      --emerald: #10b981;
-      --ad-bg: #0d121f;
-      --ad-border: #222c44;
-      --ad-title: #ffffff;
-      --btn-waiting: #1e263d;
-      --btn-waiting-text: #94a3b8;
-      --shadow: rgba(0, 0, 0, 0.4);
-    }
-
-    :root[data-theme="light"] {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --card-sub: #f1f5f9;
-      --border: #e2e8f0;
-      --border-light: #cbd5e1;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --text-dim: #94a3b8;
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
-      --emerald: #059669;
-      --ad-bg: #f8fafc;
-      --ad-border: #e2e8f0;
-      --ad-title: #0f172a;
-      --btn-waiting: #e2e8f0;
-      --btn-waiting-text: #64748b;
-      --shadow: rgba(15, 23, 42, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 24px 16px;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.5;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .wrapper {
-      max-width: 540px;
-      width: 100%;
-      margin: auto;
-    }
-
-    /* Top Navigation bar */
-    .header-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      color: inherit;
-    }
-    .brand-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-size: 14px;
-    }
-    .brand-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-    .brand-tag {
-      font-size: 0.65rem;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(16, 185, 129, 0.12);
-      color: var(--emerald);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      font-weight: 600;
-    }
-
-    /* Theme Toggle Button */
-    .theme-toggle-btn {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 10px;
-      padding: 6px 12px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    .theme-toggle-btn:hover {
-      border-color: var(--border-light);
-      color: var(--text);
-    }
-
-    /* Main Card */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 30px 26px;
-      box-shadow: 0 20px 45px -10px var(--shadow);
-      text-align: center;
-      transition: all 0.2s ease;
-    }
-
-    /* Safety & Destination Box */
-    .dest-card {
-      background: var(--card-sub);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px 18px;
-      margin-bottom: 22px;
-      text-align: left;
-      overflow: hidden;
-    }
-    .dest-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
-    .dest-tag {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .dest-badge {
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--emerald);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .dest-url {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      width: 100%;
-    }
-    .dest-icon {
-      flex-shrink: 0;
-    }
-    .dest-url-text {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
-      flex: 1;
-    }
-
-    /* --- PROMINENT HIGH-VISIBILITY ADVERTISEMENT BANNER --- */
-    .ad-banner-box {
-      background: var(--ad-bg);
-      border: 1px solid var(--ad-border);
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 24px;
-      text-align: left;
-      position: relative;
-      overflow: hidden;
-    }
-    .ad-banner-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
-      flex-wrap: wrap;
-    }
-    .ad-sponsor-label {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-    }
-    .ad-sponsor-badge {
-      font-size: 0.65rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: rgba(79, 70, 229, 0.12);
-      color: #818cf8;
-      border: 1px solid rgba(79, 70, 229, 0.25);
-    }
-
-    /* Simulated Prominent Ad (300x250 or Responsive Banner) */
-    .ad-content-link {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      text-decoration: none;
-      color: inherit;
-      min-width: 0;
-    }
-    .ad-main-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 0;
-    }
-    .ad-icon-badge {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #4f46e5, #3730a3);
-      color: #ffffff;
-      font-size: 22px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
-    }
-    .ad-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .ad-title {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--ad-title);
-      margin-bottom: 3px;
-      line-height: 1.3;
-      word-break: break-word;
-    }
-    .ad-desc {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-      word-break: break-word;
-    }
-    .ad-cta-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding-top: 4px;
-      flex-wrap: wrap;
-    }
-    .ad-tagline {
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: var(--text-dim);
-      min-width: 0;
-      flex: 1;
-    }
-    .ad-cta-btn {
-      padding: 5px 12px;
-      border-radius: 8px;
-      background: rgba(79, 70, 229, 0.15);
-      border: 1px solid rgba(79, 70, 229, 0.3);
-      color: #818cf8;
-      font-size: 0.75rem;
-      font-weight: 600;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* Timer & Action Button */
-    .timer-container {
-      margin-bottom: 8px;
-    }
-    .timer-track {
-      width: 100%;
-      height: 6px;
-      background: var(--border);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .timer-fill {
-      height: 100%;
-      width: 100%;
-      background: var(--primary);
-      border-radius: 999px;
-      transition: width 5s linear;
-    }
-
-    /* Main Jump Button */
-    .jump-btn {
-      width: 100%;
-      padding: 14px 18px;
-      border-radius: 16px;
-      font-size: clamp(0.82rem, 3.8vw, 0.95rem);
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      cursor: pointer;
-      border: none;
-      line-height: 1.3;
-      word-break: break-word;
-      box-sizing: border-box;
-    }
-    .jump-btn.waiting {
-      background: var(--btn-waiting);
-      color: var(--btn-waiting-text);
-      cursor: wait;
-      pointer-events: none;
-    }
-    .jump-btn.ready {
-      background: var(--primary);
-      color: #ffffff;
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
-      cursor: pointer;
-      pointer-events: auto;
-      animation: pulseBtn 2s infinite;
-    }
-    .jump-btn.ready:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    @keyframes pulseBtn {
-      0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.5); }
-      70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-    }
-
-    .footer-actions {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 16px;
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      flex-wrap: wrap;
-    }
-    .footer-actions a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-    .footer-actions a:hover {
-      color: var(--text);
-    }
-
-    /* Mobile Fluid Constraints */
-    @media (max-width: 480px) {
-      body {
-        padding: 16px 12px;
-      }
-      .card {
-        padding: 20px 14px;
-        border-radius: 18px;
-      }
-      .dest-card {
-        padding: 12px 12px;
-        border-radius: 14px;
-        margin-bottom: 16px;
-      }
-      .dest-url {
-        font-size: 0.95rem;
-      }
-      .ad-banner-box {
-        padding: 14px 12px;
-        border-radius: 14px;
-        margin-bottom: 18px;
-      }
-      .ad-main-row {
-        gap: 10px;
-      }
-      .ad-icon-badge {
-        width: 42px;
-        height: 42px;
-        font-size: 18px;
-        border-radius: 10px;
-      }
-      .ad-title {
-        font-size: 0.85rem;
-      }
-      .ad-desc {
-        font-size: 0.72rem;
-      }
-      .jump-btn {
-        padding: 13px 12px;
-        border-radius: 12px;
-      }
-      .footer-actions {
-        flex-wrap: wrap;
-        gap: 8px;
-        font-size: 0.72rem;
-      }
-    }
-  </style>
+  ${head(`Ir a ${host} · KyrnForge`)}
 </head>
 <body>
-  <div class="wrapper">
-    
-    <!-- Top Bar with Theme Switcher -->
-    <div class="header-bar">
-      <a href="/links" class="brand">
-        <div class="brand-icon">🔗</div>
-        <span class="brand-title">Kyrn Links</span>
-        <span class="brand-tag">Verificado</span>
-      </a>
-
-      <button id="theme-btn" class="theme-toggle-btn" aria-label="Cambiar tema">
-        <span id="theme-icon">☀️</span>
-        <span id="theme-label">Claro</span>
-      </button>
-    </div>
-
-    <!-- Main Card -->
+  <main>
+    ${BRAND}
     <div class="card">
-      
-      <!-- Destination Summary -->
-      <div class="dest-card">
-        <div class="dest-header">
-          <span class="dest-tag">Destino Verificado</span>
-          <span class="dest-badge">✓ Libre de contenido para adultos</span>
-        </div>
-        <div class="dest-url" title="${safeTarget}">
-          <span class="dest-icon">↗</span>
-          <span class="dest-url-text">${safeHostname}</span>
-        </div>
-      </div>
-
-      <!-- PROMINENT ADVERTISEMENT BANNER -->
-      <div class="ad-banner-box">
-        <div class="ad-banner-header">
-          <span class="ad-sponsor-label">Anuncio Patrocinado</span>
-          <span class="ad-sponsor-badge">Publicidad para Desarrolladores</span>
-        </div>
-
-        <!-- 
-          ESPACIO DE ANUNCIO:
-          Para EthicalAds:
-          <div data-ea-publisher="TU_PUBLISHER_ID" data-ea-type="image"></div>
-          <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
-
-          Para Carbon Ads:
-          <script async src="//cdn.carbonads.com/carbon.js?serve=TU_SERVE_ID&placement=kyrnforge" id="_carbonads_js"></script>
-        -->
-        <a href="https://kyrnforge.dev" target="_blank" rel="noopener sponsored" class="ad-content-link">
-          <div class="ad-main-row">
-            <div class="ad-icon-badge">⚡</div>
-            <div class="ad-info">
-              <div class="ad-title">Servidores Cloud NVMe &amp; VPS Ultrarrápidos</div>
-              <div class="ad-desc">Despliega microservicios y proyectos en 55 segundos. Alto rendimiento, discos NVMe y tráfico ilimitado para developers.</div>
-            </div>
-          </div>
-          <div class="ad-cta-row">
-            <span class="ad-tagline">Recomendado por la comunidad técnica</span>
-            <span class="ad-cta-btn">Ver Ofertas →</span>
-          </div>
-        </a>
-      </div>
-
-      <!-- Timer & Jump Action -->
-      <div class="timer-container">
-        <div class="timer-track">
-          <div id="bar-fill" class="timer-fill"></div>
-        </div>
-
-        <button id="jump-btn" class="jump-btn waiting">
-          <span>Esperando... (<strong id="countdown">5</strong>s)</span>
-        </button>
-      </div>
-
-      <div class="footer-actions">
-        <a id="skip-link" href="${safeTarget}">Saltar espera ahora</a>
-        <span>·</span>
-        <a href="/links">Crear mi enlace</a>
-        <span>·</span>
-        <a href="mailto:abuse@kyrnforge.dev?subject=Reporte%20de%20enlace%20${slug}" title="Reportar contenido inapropiado">Reportar</a>
-      </div>
-
+      <p class="eyebrow">Vas a salir de KyrnForge</p>
+      <h1>${host}</h1>
+      <p class="target" title="${target}">${target}</p>
+      <div class="bar" id="bar"><span></span></div>
+      <a class="go" id="go" href="${target}" rel="noopener noreferrer">Continuar</a>
+      <p class="note" id="note">Te llevo en <span id="count">${WAIT_SECONDS}</span> s · <button type="button" id="stay">Quedarme aquí</button></p>
     </div>
-  </div>
-
+    <footer>
+      <a href="/links">Crear un enlace</a>
+      <a href="mailto:abuse@kyrnforge.dev?subject=${encodeURIComponent(`Reporte de enlace ${slug}`)}">Reportar</a>
+    </footer>
+  </main>
   <script>
-    (function() {
-      var target = ${JSON.stringify(link.targetUrl)};
-      var seconds = 5;
-      var countdownEl = document.getElementById('countdown');
-      var jumpBtn = document.getElementById('jump-btn');
-      var bar = document.getElementById('bar-fill');
-      var themeBtn = document.getElementById('theme-btn');
-      var themeIcon = document.getElementById('theme-icon');
-      var themeLabel = document.getElementById('theme-label');
-      var root = document.documentElement;
-
-      // 1. Theme initialization & toggle (supports Light & Dark modes)
-      var savedTheme = localStorage.getItem('kyrn_links_theme_v1');
-      if (savedTheme) {
-        root.setAttribute('data-theme', savedTheme);
-      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        root.setAttribute('data-theme', 'light');
-      }
-
-      function updateThemeButtonUI() {
-        var current = root.getAttribute('data-theme');
-        if (current === 'light') {
-          themeIcon.textContent = '🌙';
-          themeLabel.textContent = 'Oscuro';
-        } else {
-          themeIcon.textContent = '☀️';
-          themeLabel.textContent = 'Claro';
-        }
-      }
-      updateThemeButtonUI();
-
-      themeBtn.addEventListener('click', function() {
-        var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-        root.setAttribute('data-theme', next);
-        localStorage.setItem('kyrn_links_theme_v1', next);
-        updateThemeButtonUI();
-      });
-
-      // 2. Animate countdown progress bar
-      setTimeout(function() {
-        if (bar) bar.style.width = '0%';
-      }, 50);
-
-      // 3. Countdown timer logic (Standard 5 seconds)
-      var interval = setInterval(function() {
-        seconds--;
-        if (countdownEl) countdownEl.textContent = seconds;
-        
-        if (seconds <= 0) {
-          clearInterval(interval);
-          jumpBtn.classList.remove('waiting');
-          jumpBtn.classList.add('ready');
-          jumpBtn.innerHTML = '<span>CONTINUAR AL DESTINO AHORA →</span>';
-
-          // When button is clicked, jump to destination URL
-          jumpBtn.addEventListener('click', function() {
-            window.location.href = target;
-          });
+    (function () {
+      var target = ${scriptJson(link.targetUrl)};
+      var left = ${WAIT_SECONDS};
+      var count = document.getElementById('count');
+      var timer = setInterval(function () {
+        left -= 1;
+        count.textContent = left;
+        if (left <= 0) {
+          clearInterval(timer);
+          window.location.href = target;
         }
       }, 1000);
-
+      document.getElementById('stay').addEventListener('click', function () {
+        clearInterval(timer);
+        document.getElementById('bar').style.visibility = 'hidden';
+        document.getElementById('note').textContent = 'Redirección pausada. Usa el botón cuando quieras.';
+      });
     })();
   </script>
 </body>
 </html>`;
 
-  return new Response(pageHtml, {
+  return new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=1800'
-    }
+      'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=1800',
+    },
   });
 }

@@ -1,5 +1,5 @@
 // Cloudflare Pages Function: /sitemap.xml
-// Dynamically generates the sitemap containing all apps and projects from Cloudflare KV / Static Fallback
+// Sitemap con las páginas fijas y todas las fichas de apps y proyectos (KV o JSON estático).
 
 export async function onRequestGet(context) {
   try {
@@ -49,6 +49,12 @@ export async function onRequestGet(context) {
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+${['links', 'acerca', 'privacidad'].map(page => `  <url>
+    <loc>https://kyrnforge.dev/${page}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`).join('\n')}
 ${appEntries.map(id => `  <url>
     <loc>https://kyrnforge.dev/app/${id}</loc>
     <lastmod>${today}</lastmod>

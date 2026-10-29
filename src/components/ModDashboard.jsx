@@ -405,8 +405,8 @@ function CreationsTab({ items, onSave, saving }) {
   );
 }
 
-const LIGHT_UI = { bg: '#f3f4f2', surface: '#ffffff', line: '#dcdfdb', fg: '#181a19', muted: '#565b58' };
-const DARK_UI = { bg: '#111312', surface: '#191c1b', line: '#2a2e2c', fg: '#e6e9e7', muted: '#a2a8a4' };
+const LIGHT_UI = { bg: '#e8ecf1', surface: '#f7f9fb', line: '#c9d1db', fg: '#141b24', muted: '#4d5a69' };
+const DARK_UI = { bg: '#0d1218', surface: '#141b23', line: '#27323e', fg: '#e3e9ef', muted: '#9eabb9' };
 
 function tileStyle(colors) {
   return { '--tile-bg': colors.accent, '--tile-fg': colors.on };

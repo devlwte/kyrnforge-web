@@ -38,8 +38,8 @@ export const PALETTES = {
   grafito: {
     name: 'Grafito',
     note: 'Sin color: negro sobre gris.',
-    light: { accent: '#2a2d2c', on: '#f3f4f2' },
-    dark: { accent: '#dfe2e0', on: '#111312' },
+    light: { accent: '#252c35', on: '#eef1f5' },
+    dark: { accent: '#dbe1e8', on: '#0d1218' },
   },
 };
 

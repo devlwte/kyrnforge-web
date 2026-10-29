@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --bg: 243 244 242;
-    --surface: 255 255 255;
-    --raised: 233 235 232;
-    --line: 220 223 219;
-    --fg: 24 26 25;
-    --muted: 86 91 88;
-    --dim: 138 143 139;
+    --bg: 232 236 241;
+    --surface: 247 249 251;
+    --raised: 220 226 233;
+    --line: 201 209 219;
+    --fg: 20 27 36;
+    --muted: 77 90 105;
+    --dim: 125 137 151;
     --accent: 54 80 110;
     --accent-fg: 241 244 248;
     --ok: 63 122 58;
@@ -18,13 +18,13 @@
   }
 
   :root[data-theme="dark"] {
-    --bg: 17 19 18;
-    --surface: 25 28 27;
-    --raised: 34 38 36;
-    --line: 42 46 44;
-    --fg: 230 233 231;
-    --muted: 162 168 164;
-    --dim: 109 115 111;
+    --bg: 13 18 24;
+    --surface: 20 27 35;
+    --raised: 28 37 47;
+    --line: 39 50 62;
+    --fg: 227 233 239;
+    --muted: 158 171 185;
+    --dim: 104 118 133;
     --accent: 147 171 201;
     --accent-fg: 16 23 34;
     --ok: 134 180 126;
@@ -36,8 +36,8 @@
   :root[data-accent="patina"][data-theme="dark"] { --accent: 124 191 174; --accent-fg: 14 26 23; }
   :root[data-accent="hierro"] { --accent: 163 50 43; --accent-fg: 251 241 240; }
   :root[data-accent="hierro"][data-theme="dark"] { --accent: 227 133 124; --accent-fg: 33 13 11; }
-  :root[data-accent="grafito"] { --accent: 42 45 44; --accent-fg: 243 244 242; }
-  :root[data-accent="grafito"][data-theme="dark"] { --accent: 223 226 224; --accent-fg: 17 19 18; }
+  :root[data-accent="grafito"] { --accent: 37 44 53; --accent-fg: 238 241 245; }
+  :root[data-accent="grafito"][data-theme="dark"] { --accent: 219 225 232; --accent-fg: 13 18 24; }
 
   html, body {
     overflow-x: hidden;

@@ -20,13 +20,13 @@ function scriptJson(value) {
 
 const style = ({ light, dark }) => `
   :root {
-    --bg: #f3f4f2; --surface: #ffffff; --line: #dcdfdb; --fg: #181a19;
-    --muted: #565b58; --dim: #8a8f8b; --accent: ${light.accent}; --accent-fg: ${light.on};
+    --bg: #e8ecf1; --surface: #f7f9fb; --line: #c9d1db; --fg: #141b24;
+    --muted: #4d5a69; --dim: #7d8997; --accent: ${light.accent}; --accent-fg: ${light.on};
     color-scheme: light;
   }
   :root[data-theme="dark"] {
-    --bg: #111312; --surface: #191c1b; --line: #2a2e2c; --fg: #e6e9e7;
-    --muted: #a2a8a4; --dim: #6d736f; --accent: ${dark.accent}; --accent-fg: ${dark.on};
+    --bg: #0d1218; --surface: #141b23; --line: #27323e; --fg: #e3e9ef;
+    --muted: #9eabb9; --dim: #687685; --accent: ${dark.accent}; --accent-fg: ${dark.on};
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
